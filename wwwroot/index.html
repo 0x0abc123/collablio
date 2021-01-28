@@ -340,20 +340,19 @@ word-wrap: anywhere;
 }
 
 </style>
-<!--v-bind:style="[isCurrentlySelected() ? {'background-color' : '#999999'} : {}]"-->
+
     <!-- item template -->
     <template type="text/x-template" id="item-template">
       <li>
-        <!--div :style="{textIndent: getIndent}" @contextmenu="showCtxMenu($event,item.uid)" -->
+
         <div :style="[{textIndent: getIndent},isCurrentlySelected() ? {'background-color' : '#CCEEFF'} : {}]" @contextmenu="showCtxMenu($event,item.uid)" 
 			draggable @dragstart="startDrag($event,item.uid)" @drop='onDrop($event)' @dragover.prevent @dragenter.prevent >
 		<span><img v-bind:class="getIcon()"></span>
 		<span v-bind:style="[item.isViewed ? {} : {'font-weight': 'bold'}]" class="arrow" @click="viewNode($event,item.uid)">{{ item.l }}</span><!--{{ name() }}-->
-          <!--span v-if="hasChildren" @click="toggle(item.uid)"-->
-          <span v-if="item.out && item.out.length" @click="toggle(item.uid)">
-		  <span v-if="isOpen"><img class="ico-sqminus"></span>
-		  <span v-else><img class="ico-sqplus"></span>
-		  </span>
+		<span v-if="item.out && item.out.length" @click="toggle(item.uid)">
+		<span v-if="isOpen"><img class="ico-sqminus"></span>
+		<span v-else><img class="ico-sqplus"></span>
+		</span>
         </div>
         <!--ul v-show="isOpen" v-if="hasChildren"-->
         <ul v-show="isOpen" v-if="item.outrefs && item.outrefs.length">
@@ -413,11 +412,7 @@ word-wrap: anywhere;
 
   <!-- Right side -->
   <div id="v_topnav" class="level-right">
-    <!--p class="level-item"><strong>All</strong></p-->
     <p class="level-item"><strong>{{v.node.l}}</strong></p>
-    <!--p class="level-item pr-4" v-if="pr.ref.t"><strong>&nbsp;>>&emsp;{{pr.ref.t}}</strong></p>
-	<p class="level-item pr-4" v-else><strong>&nbsp;</strong></p-->
-
     <p class="level-item"  onclick=""><a class="button is-small">Test Modal</a></p>
     <p class="level-item pr-4" onClick=""><a class="button is-small">Projects</a></p>
     <p class="level-item"><a @click="" class="button is-success is-small">Tasks</a></p>
@@ -426,8 +421,6 @@ word-wrap: anywhere;
 </nav>
 
 <!-- columns view (tree + main panes) -->
-
-
 
 <div id="pageFrame">
   <div id="page" onmouseup="EndDrag()" onmousemove="OnDrag(event)">
@@ -466,7 +459,6 @@ word-wrap: anywhere;
 					<div class="mono">{{v.config.nodeinfo.c}}</div>
 				  </div>
 				  <div class="box"  @drop='onDrop($event)' @dragover.prevent @dragenter.prevent>
-					<!--div class="pb-3"><a class="button is-success is-medium" @click="">New Project</a></div--><!--p-1 has-background-info has-text-white-->
 					<p class="subtitle">List of Child Items</p>
 					<div v-for="(child, index) in v.config.nodeinfo.outrefs" class="mb-3">
 					<!-- TODO: allow cloning of items but need to fetch attachment body if it hasnt been populated yet -->
@@ -491,53 +483,25 @@ word-wrap: anywhere;
 		<!--////VueBinding////-->
 			<div id="v_view_textbody">
 				<h2>[{{v.config.nodeinfo.d}}] {{v.config.nodeinfo.l}}</h2>
-				<!--is-family-monospace test1 -->
 				  <div class="tooloutput"><div class="mono">{{v.config.nodeinfo.x}}</div></div>
 				
 			</div>
 		</div>
 
 		<div id="view_editor" style="display: none">
-			<!--div id="editable_buttonbar" class="mb-2">
-				<a class="button is-primary" id="toggleEditing" onclick="setQuillState('toggle')">Edit</a>
-				<div class="field">
-				  <div class="control"><input class="input is-info" type="text" placeholder="Info input"></div>
-				</div>
-			</div-->
-
-				  <!--div class="columns is-vcentered">				
-					<div class="column is-10">
-					  <div class="field">
-						<p class="control">
-						  <input id="editor_title" class="input titleedit" type="text" placeholder="Enter a Note Title">
-						</p>
-					  </div>
-					</div>
-					
-					<div class="column is-2">
-					  <span><a class="button is-primary" id="toggleEditing" onclick="toggleQuill()">Edit</a></span>
-					  <span><div class="button drag is-warning" id="v_all_editor" draggable @dragstart="startDrag($event)"><span><img class="ico-move"><span>Clone</div></span>
-					</div>
-							
-				  </div-->
-
-				  <div class="columns is-vcentered">				
-					<div class="column">
-					  <div class="field">
-						<p class="control">
-						  <input id="editor_title" class="input titleedit" type="text" placeholder="Enter a Note Title">
-						</p>
-					  </div>
-					</div>
-					
-					<div class="column is-one-third has-text-left">
-					  <span><a class="button is-primary" id="toggleEditing" onclick="toggleQuill()">Edit</a></span>
-					  <span><div class="button drag is-success" id="v_all_editor" draggable @dragstart="startDrag($event)">Clone</div></span>
-					</div>
-							
+			<div class="columns is-vcentered">				
+				<div class="column">
+				  <div class="field">
+					<p class="control">
+					  <input id="editor_title" class="input titleedit" type="text" placeholder="Enter a Note Title">
+					</p>
 				  </div>
-			
-			
+				</div>
+				<div class="column is-one-third has-text-left">
+				  <span><a class="button is-primary" id="toggleEditing" onclick="toggleQuill()">Edit</a></span>
+				  <span><div class="button drag is-success" id="v_all_editor" draggable @dragstart="startDrag($event)">Clone</div></span>
+				</div>	
+			</div>						
 			<div id="editor" style="height: 65vh;"></div> 
 		</div>
 	 
@@ -566,81 +530,6 @@ word-wrap: anywhere;
 	 
 	 
 		<div id="main_pane_testform" style="display: none">
-		<!--////VueBinding////-->
-		<!--
-		 <div id="v_main_pane_testform">
-			<h1 class="title">{{cl.action}} Details Form</h1>
-			<div class="tooloutput">
-			  <div class="pr-3">
-				<div class="field">
-				  <label class="label">Name</label>
-				  <div class="control">
-					<input class="input" type="text" placeholder="Client Short Name" v-model="cl.ref.t">
-				  </div>
-				</div>
-
-				<div class="field">
-				  <label class="label">Username</label>
-				  <div class="control">
-					<input class="input is-success" type="text" placeholder="Long Name or Description" v-model="cl.ref.d">
-				  </div>
-				  <p class="help is-success">This username is available</p>
-				</div>
-
-				<div class="field">
-				  <label class="label">Subject</label>
-				  <div class="control">
-					<div class="select">
-					  <select>
-						<option>Select dropdown</option>
-						<option>With options</option>
-					  </select>
-					</div>
-				  </div>
-				</div>
-
-				<div class="field">
-				  <label class="label">Message</label>
-				  <div class="control">
-					<textarea class="textarea" placeholder="Textarea"></textarea>
-				  </div>
-				</div>
-
-				<div class="field">
-				  <div class="control">
-					<label class="checkbox">
-					  <input type="checkbox">
-					  I agree to the <a href="#">terms and conditions</a>
-					</label>
-				  </div>
-				</div>
-
-				<div class="field">
-				  <div class="control">
-					<label class="radio">
-					  <input type="radio" name="question">
-					  Yes
-					</label>
-					<label class="radio">
-					  <input type="radio" name="question">
-					  No
-					</label>
-				  </div>
-				</div>
-
-				<div class="field is-grouped">
-				  <div class="control">
-					<button class="button is-link" @click="vSubmit()">Submit</button>
-				  </div>
-				  <div class="control">
-					<button class="button is-link is-light">Cancel</button>
-				  </div>
-				</div>
-				
-			  </div>
-			</div>
-		 </div>  
-		 -->
 		</div><!-- end main_pane -->
 	 
 	 
@@ -980,13 +869,11 @@ function toggleQuill()
 	if(isEnabled)
 		_panesIndex['edit']['editor'].onAfterSubmit();
 	else
-		//_panesIndex['edit']['editor'].onBeforeShow();		
 		v_action_funcs['edit'](quillGlobal.CurrentUid);
 }
 
 function populateQuill(nodeinfo)
 {
-	// load stuff from vPtrAttach
 	// serializedDelta can be stored in persistent storage or sent in a message etc.
 	let serialisedDeltas = nodeinfo[PROP_TEXTDATA] ||  "{}";
 	quill.setContents(JSON.parse(serialisedDeltas));	
@@ -999,9 +886,7 @@ function getQuillEdits(nodeinfo)
 	let edtitle = document.getElementById('editor_title');
 	let deltas = quill.getContents();
 	nodeinfo[PROP_TEXTDATA] = JSON.stringify(deltas);
-	//attNode[] = MIME_MIRUKET_NOTE;
 	nodeinfo[PROP_LABEL] = edtitle.value;
-	//vPtrAttach.ref.t = 'Untitled Note';
 	nodeinfo[PROP_DETAIL] = 'Note';
 }
 
@@ -1042,7 +927,6 @@ function toggleJexcel()
 	if(j_isEnabled)
 		_panesIndex['edit']['table'].onAfterSubmit();
 	else
-		//_panesIndex['edit']['editor'].onBeforeShow();		
 		v_action_funcs['edit'](jexcelGlobal.CurrentUid);
 	j_isEnabled = !j_isEnabled;
 }
@@ -1091,13 +975,11 @@ function setJexcelVisualState(status)
 	let edtitle = document.getElementById('table_title');
 
 	if(status == 'enable') {
-		//quill.enable();
 		setJexcelReadonly(false);
 		edtitle.readOnly = false;
 		edbutton.innerText = "Save";
 	}
 	else {
-		//quill.disable();
 		setJexcelReadonly(true);
 		edtitle.readOnly = true;
 		edbutton.innerText = "Edit";
@@ -1124,7 +1006,7 @@ const PROP_CHILDREFS = "outrefs";
 const PROP_VUEREF = 'vueref';
 
 function emptyNode(_uid = '', type = '') { 
-	//return { uid: _uid, l: '', d: '', e: '', ty: type, c: '', x: '', b: '', t: '', m: '', inrefs : [], outrefs : [], in: [], out: [], lnk: [], hasChanged: false, isOpen: false}
+
 	let node = {};
 	node[PROP_UID] = _uid;
 	node[PROP_TYPE] = type;
@@ -1216,7 +1098,6 @@ function getDefaultConfig(panetype, subtype = 'default')
 	if(!conf) conf = {};
 	conf.nodeinfo = emptyNode();
 	return conf;
-	//conf.parentNodeID = ''; the nodeinfo contains parents
 }
 
 var _typeConfigs = {};
@@ -1377,10 +1258,8 @@ var _panesIndex = {
 		"editor" : {
 			divID: "view_editor", //DOMelementID
 			v: { config:  getDefaultConfig('view')},
-//			onBeforeShow: function(){
 			onBeforeShow: async function(){
 				//need to fetch attachment body and populate quill
-//				updateAttachmentNodeIfChangedOrEmpty(this.v.config.nodeinfo);
 				let nodeInfo = this.v.config.nodeinfo;
 				await updateAttachmentNodeIfChangedOrEmpty(nodeInfo);
 				populateQuill(nodeInfo);
@@ -1418,7 +1297,6 @@ var _panesIndex = {
 			onBeforeCopyNode: async function(){
 				//need to fetch attachment body if its not there or needs an update
 				await updateAttachmentNodeIfChangedOrEmpty(this.v.config.nodeinfo);
-				// the above operation will update the _index, but that's not 
 			}, //get config using this.v.config  (will have nodeinfo and parentID)
 			onBeforeShow: function(){
 				populateQuill(this.v.config.nodeinfo);
@@ -1443,7 +1321,6 @@ var _panesIndex = {
 			onBeforeCopyNode: async function(){
 				//need to fetch attachment body if its not there or needs an update
 				await updateAttachmentNodeIfChangedOrEmpty(this.v.config.nodeinfo);
-				// the above operation will update the _index, but that's not 
 			}, //get config using this.v.config  (will have nodeinfo and parentID)
 			onBeforeShow: function(){
 				populateJexcel(this.v.config.nodeinfo);
@@ -1552,7 +1429,6 @@ function switchPane(paneType, paneName)
 			value.style.display = (key == _divID) ? D_SHOW : D_HIDE;
 		// show the modal div
 		toggleModal();
-		//document.getElementById("modal_div").classList.toggle('is-active');
 	}
 }
 
@@ -1573,23 +1449,10 @@ function showLoading(waiting)
 	logo.classList.replace('ico-load', 'ico-logo');
 }
 
-/*
-const fileInput = document.getElementById("at_file");
-  fileInput.onchange = () => {
-    if (fileInput.files.length > 0) {
-      const fileName = document.getElementById('at_file_name');
-      fileName.textContent = fileInput.files[0].name;
-    }
-  };
-*/
-
-
 
 function toggleModal()
 {
    document.getElementById("modal_div").classList.toggle('is-active');
-   //let div = document.getElementById("testdiv");
-   //div.style.display = (div.style.display == D_HIDE) ? D_SHOW : D_HIDE;
 }
 
 function clearFileUploadFormInput()
@@ -1638,8 +1501,6 @@ function extendList(list, listToAdd)
 
 function sortList(list)
 {
-	//let tmpSet = new Set(list);
-	//tmpSet.add(tgtNode);
 	//need to do the sorting here because Vue is hanging when using computed or method sorting (maybe an issue with the circular references in/out?)
 	list.sort(
 		(nodeA,nodeB) => {
@@ -1647,8 +1508,6 @@ function sortList(list)
 			let bType = nodeB[PROP_TYPE];
 			let aVal = (_typeConfigs[aType] && _typeConfigs[aType].getValueForSorting) ? _typeConfigs[aType].getValueForSorting(nodeA) : nodeA[PROP_LABEL]; 
 			let bVal = (_typeConfigs[bType] && _typeConfigs[bType].getValueForSorting) ? _typeConfigs[bType].getValueForSorting(nodeB) : nodeB[PROP_LABEL]; 
-			//if (aVal =='') return -1; 
-//			if(!Number.isFinite(aVal) && !Number.isFinite(bVal)) 
 			let aIsString = (typeof aVal) === 'string';
 			let bIsString = (typeof bVal) === 'string';
 			if( aIsString || bIsString ) 
@@ -1656,8 +1515,6 @@ function sortList(list)
 
 			aVal = (isNaN(aVal)) ? Infinity : aVal;
 			bVal = (isNaN(bVal)) ? Infinity : bVal;
-			//aVal = (Number.isFinite(aVal)) ? aVal : parseInt(aVal,10);
-			//bVal = (Number.isFinite(bVal)) ? bVal : parseInt(bVal,10);
 			return (aVal < bVal) ? -1 : ((aVal > bVal) ? 1 : 0 );
 			//^alpha is lower than numeric
 		}	
@@ -1683,7 +1540,6 @@ function convertIPtoNum(ipstr) {
 }
 
 
-//genericUpsert
 //this should be modified to return a result to indicate whether error or success
 // the result can be interpreted by the 'add' dialog so an error can be shown or the dialog closed if successful
 async function upsertGeneric(node)
@@ -1704,7 +1560,6 @@ async function upsertGeneric(node)
 		{
 			if(!_index[rdata[0]])
 				_index[rdata[0]] = emptyNode(rdata[0]);
-			//refreshQuery()
 		}
 		else
 		{
@@ -1776,7 +1631,7 @@ async function moveNodeToNewParent(node, newParentNode)
 		console.log(JSON.stringify(rdata));
 		if(rdata && rdata.error)
 		{
-			console.log("move nodes failed: ",rdata.message);//deal with the error
+			console.log("move nodes failed: ",rdata.message);//need to deal with any errors
 		}
 	});
 	showLoading(false);
@@ -1792,7 +1647,7 @@ async function copyNodeToParent(node, newParentNode)
 	newCopy[PROP_PARENTLIST] = [{uid: newParentNode[PROP_UID]}];
 	newCopy[PROP_CHILDLIST] = [];
 	newCopy[PROP_UID] = '';
-	//remember to nuke lnk[] too when implemented
+	//todo: remember to nuke lnk[] too when implemented
 	console.log(serialise(newCopy));
 	await upsertGeneric(newCopy);
 }
@@ -1800,7 +1655,7 @@ async function copyNodeToParent(node, newParentNode)
 
 
 //updatenodes (send list of uids to server and get nodes (newer than last update)
-// create inrefs, outrefs, isOpen
+
 var _lastUpdateTime_Server = 0;
 var _lastUpdateTime_Browser = Date.now();
 
@@ -1900,35 +1755,33 @@ function createEdgesFromUidsInplace(listUidObjs,existingList)
 				existingList.push(_index[uidobj.uid]);
 		});
 }
-///*************
-// the sorting of child references (alpha numeric) was done around this stage because using VueJS computed/methods was hanging,
-// so sort them during edge creation.
-///*************
+
 
 function createEdgesForNode(node)
 {
-//root node doesn't have parentrefs, what to do?
+		//root node doesn't have parentrefs, what to do?
 		clearList(node[PROP_PARENTREFS]);
 		createEdgesFromUidsInplace(node[PROP_PARENTLIST],node[PROP_PARENTREFS]);
 
-//	node[PROP_PARENTREFS] = createEdgesFromUids(node[PROP_PARENTLIST]);
 		clearList(node[PROP_CHILDREFS]);
 		createEdgesFromUidsInplace(node[PROP_CHILDLIST],node[PROP_CHILDREFS]);
 
+		///*************
+		// the sorting of child references (alpha numeric) was done around this stage because using VueJS computed/methods was hanging,
+		// so sort them during edge creation.
+		///*************
 		sortList(node[PROP_CHILDREFS]);
 		if(node[PROP_PARENTREFS] && node[PROP_PARENTREFS].length) {
 			node[PROP_PARENTREFS].forEach( parent => sortList(parent[PROP_CHILDREFS]) );
 		}
-
-//	node[PROP_CHILDREFS] = createEdgesFromUids(node[PROP_CHILDLIST]);
 }
 
 function updateNode(existingNode, updatedNode)
 {
-// safe assumptions: queryNodes always returns uid, label, detail, customdata, time, editing, lastmod, in, out *if* they are present
-//  so, if any of these are not present, then they are null. 
-//  we don't want to create fields if they don't already exist *except* for in, out
-//  if in or out don't exist then create empty arrays
+	// safe assumptions: queryNodes always returns uid, label, detail, customdata, time, editing, lastmod, in, out *if* they are present
+	//  so, if any of these are not present, then they are null. 
+	//  we don't want to create fields if they don't already exist *except* for in, out
+	//  if in or out don't exist then create empty arrays
 
 	let oldHasChangedValue = existingNode.hasChanged;
 	
@@ -1940,15 +1793,6 @@ function updateNode(existingNode, updatedNode)
 	
 	for (const [key, value] of Object.entries(updatedNode)) {
 
-//this may not be necessary (the underlying issue was probably missing out[] on incoming node not clearing the existing out[]):
-/*
-if(key == PROP_CHILDLIST || key == PROP_PARENTLIST){
-	clearList(existingNode[key]);
-	extendList(existingNode[key],value);
-}
-else{
-	  existingNode[key] = value;
-}*/
 	  existingNode[key] = value;
 	  //console.log("update:",key,value);
 	}
@@ -1956,9 +1800,6 @@ else{
 
 function updateNodeTree(serverResponse)
 {
-	// delete nodes
-	// delete edges
-	// upsert nodes
 
 	let nodes = serverResponse.nodes;
 	for (let i = 0; i < nodes.length; i++)
@@ -1982,18 +1823,8 @@ function updateNodeTree(serverResponse)
 			incomingNode.isViewed = false;
 			incomingNode.isOpen = false;
 			_index[incomingNode.uid] = incomingNode;
-			//tnode = _index[incomingNode.uid];
-			//console.log("add main:",tnode.uid);
 		}
-/*
-		tnode[PROP_PARENTLIST] = tnode[PROP_PARENTLIST] || [];
-		tnode[PROP_PARENTREFS] = tnode[PROP_PARENTREFS] || [];
-		tnode[PROP_CHILDLIST] = tnode[PROP_CHILDLIST] || [];
-		tnode[PROP_CHILDREFS] = tnode[PROP_CHILDREFS] || [];
-		tnode[PROP_RELATIONS] = tnode[PROP_RELATIONS] || [];
-*/
 	}
-
 
 	for (let i = 0; i < nodes.length; i++)	
 		createEdgesForNode(_index[nodes[i].uid]);
@@ -2008,20 +1839,13 @@ async function updateAttachmentNodeIfChangedOrEmpty(node,datafield = PROP_TEXTDA
 	{
 console.log("att refresh: ",node.m);
 		showLoading(true);
-//		await fetch('/attachment/'+node[PROP_UID]+'/'+(!node[datafield] ? '0' : _lastUpdateTime_Server))
 		await fetch('/attachment/'+node[PROP_UID]+'/0')
 		.then(response => response.json())
 			.then(data => { 
-				//vPtrAttach.ref.b = data.nodes[0].b;
 				updateNodeTree(data);
-				//vPtrAttach.ref = _index[aID];
-				//vPtrAttach.parentID = _index[aID].in[0].uid;
 				}
 			);
 		showLoading(false);
-		//node.hasChanged = false;
-		//vPtrAttach.ref = _index[aID];
-		//vue_mp_showfile.$forceUpdate();
 	}
 	else {console.log("att hasnt changed or already has datafield: ",node.hasChanged,node[datafield]);}
 }
@@ -2066,21 +1890,14 @@ Vue.component("tree-item", {
 		getIcon: function() {
 			if(!_typeConfigs[this.item[PROP_TYPE]])
 				return 'ico-miscfile';
-			let iconClass = _typeConfigs[this.item[PROP_TYPE]].iconClassName || 'ico-miscfile';
-			//let iconClass = {};
-			//iconClass[iconClassName] = true;
-			return iconClass;
+			return _typeConfigs[this.item[PROP_TYPE]].iconClassName || 'ico-miscfile';
 		},
 		showCtxMenu: function (event,nodeID) {
 			console.log(event,nodeID);
 			  contextMenuFor("ctxmenu-div",event,nodeID);
-			  //pass the uid to it somehow
 		},
-//		viewNode: function(e, type, id) {
 		viewNode: function(e, id) {
-			//view node
 			console.log(e,id);
-//			v_action_funcs['view'](type,id);
 			v_action_funcs['view'](id);
 		},
 		toggle: function(id) {
@@ -2102,10 +1919,6 @@ Vue.component("tree-item", {
 		},
 		startDrag: function(evt, id) {
 			startDragging(evt, id, 'move');
-			//evt.dataTransfer.dropEffect = 'move';
-			//evt.dataTransfer.effectAllowed = 'move';
-			//evt.dataTransfer.setData('action', 'move');
-			//evt.dataTransfer.setData('itemID', id);
 		},
 		onDrop: async function (evt) {
 			const srcNodeID = evt.dataTransfer.getData('itemID');
@@ -2117,16 +1930,12 @@ Vue.component("tree-item", {
 				await v_action_funcs['move'](srcNodeID,this.item[PROP_UID]);
 		},
 		makeFolder: function() {
-		/*if (!this.hasChildren) {
-		  this.$emit("make-folder", this.item);
-		  this.isOpen = true;
-		}*/
 		},
 	}
 });
 
 
-// boot up the demo
+
 var v_tree_pane = new Vue({
 	el: "#v_tree_pane",
 	data: {
@@ -2159,12 +1968,7 @@ function contextMenuFor(ctxmenudiv,event,nodeID)
 
 		if(nConfig.actionEditConf)
 			G.ctxmenuData.mainOptions.push("edit");
-		/*
-		if(nConfig.actionMoveParentConf)
-			G.ctxmenuData.mainOptions.push("moveparent");
-		if(nConfig.actionMoveParentConf)
-			G.ctxmenuData.mainOptions.push("movechildren");
-		*/
+
 		let allowedToAdd = Array.from(nConfig.typesAllowedForChildNodes || []);
 		allowedToAdd.forEach((typename,index) => {G.ctxmenuData.addOptions.push(`+${typename}`)});
 
@@ -2184,13 +1988,11 @@ function emptyCtxMenuData(_uid = '.') {
 	return {uid: _uid, mainOptions: [], addOptions: []};
 }
 
-//var G.ctxmenuData = emptyCtxMenuData();
 
 var v_action_funcs = { 
 	view: async function (uid) { 
 		let n = _index[uid];
 		let tc = _typeConfigs[(n[PROP_TYPE] || "unknown")] || _typeConfigs.unknown;
-		//let tc = _typeConfigs[typename];
 		if(tc) {
 			let conf =  tc.actionViewConf || _typeConfigs.unknown.actionViewConf;
 			_panesIndex.view[conf.paneType].v.config = conf.config;
@@ -2200,8 +2002,6 @@ var v_action_funcs = {
 			n.isViewed = true;
 			v_currently_selected_node.node = n;
 			if(n[PROP_PARENTREFS]) {
-				//n[PROP_PARENTREFS][0].isOpen = true;
-				//v_tree_pane.$forceUpdate();
 				n[PROP_PARENTREFS][0][PROP_VUEREF].isOpen = true;
 			}
 		}
@@ -2248,7 +2048,6 @@ var v_action_funcs = {
 		//reject obvious stuff: src and target are same, and can't move the root node
 		if(srcUID == targetUID)
 		{
-			//notification(`Target ${targetUID} is the same as src ${srcUID}`);
 			notification('Can\'t copy to same item');
 			return;
 		}
@@ -2267,13 +2066,13 @@ var v_action_funcs = {
 		let targetTC = _typeConfigs[nTarget[PROP_TYPE]];
 		if(!targetTC.typesAllowedForChildNodes.has(nSrc[PROP_TYPE]))
 		{
-			//console.log(`not allowed to add ${nSrc.ty} to ${nTarget.ty}`);
 			notification(`${nSrc.ty}s are not allowed to be added to ${nTarget.ty}s`);
 			return;
 		}
 		
+		console.log(`copy Src: ${nSrc.uid} (${nSrc.l}), Target: ${nTarget.uid} (${nTarget.l})`);
+
 		//do the copy:
-console.log(`copy Src: ${nSrc.uid} (${nSrc.l}), Target: ${nTarget.uid} (${nTarget.l})`);
 		await copyNodeToParent(nSrc, nTarget);
 	},	
 	move: async function (srcUID, targetUID) { 
@@ -2317,8 +2116,9 @@ console.log(`copy Src: ${nSrc.uid} (${nSrc.l}), Target: ${nTarget.uid} (${nTarge
 			console.log(`adding "${nSrc[PROP_LABEL]}" as child of "${nTarget[PROP_LABEL]}" would create a cyclic reference`);
 			return;
 		}
+
+		console.log(`Move Src: ${nSrc.uid} (${nSrc.l}), Target: ${nTarget.uid} (${nTarget.l})`);
 		//do the move:
-console.log(`Move Src: ${nSrc.uid} (${nSrc.l}), Target: ${nTarget.uid} (${nTarget.l})`);
 		await moveNodeToNewParent(nSrc, nTarget);
 	},
 };
@@ -2382,17 +2182,10 @@ var v_view_default = new Vue({
 		viewNode: function(e, id) {
 			//view node
 			console.log(e,id);
-//			v_action_funcs['view'](type,id);
 			v_action_funcs['view'](id);
 		},
 		startDrag: function(evt,id) {
 			startDragging(evt, id, 'move');
-			/*
-			evt.dataTransfer.dropEffect = 'copy';
-			evt.dataTransfer.effectAllowed = 'copy';
-			evt.dataTransfer.setData('action', 'copy');
-			evt.dataTransfer.setData('itemID', id);
-			*/
 			console.log('start clone: '+id);
 		},
 		onDrop: async function (evt) {
@@ -2505,7 +2298,6 @@ var v_add_table = new Vue({
 var v_all_editor = new Vue({
 	el: '#v_all_editor',
 	data: { 
-	//FIX THIS: it doesnt work if you click "edit" from the view because _panesIndex['view']['editor'].v is populated
 	   v: _panesIndex['edit']['editor'].v,
 	   q: quillGlobal
 	},
@@ -2515,10 +2307,6 @@ var v_all_editor = new Vue({
         }, 
 		startDrag: function(evt) {
 			startDragging(evt, this.q.CurrentUid, 'copy');
-			//evt.dataTransfer.dropEffect = 'copy';
-			//evt.dataTransfer.effectAllowed = 'copy';
-			//evt.dataTransfer.setData('action', 'copy');
-			//evt.dataTransfer.setData('itemID', this.q.CurrentUid);
 			console.log('start clone: '+this.q.CurrentUid);
 		},
 	}
@@ -2527,7 +2315,6 @@ var v_all_editor = new Vue({
 var v_all_table = new Vue({
 	el: '#v_all_table',
 	data: { 
-	//FIX THIS: it doesnt work if you click "edit" from the view because _panesIndex['view']['editor'].v is populated
 	   v: _panesIndex['edit']['table'].v,
 	   j: jexcelGlobal
 	},
@@ -2537,10 +2324,6 @@ var v_all_table = new Vue({
         }, 
 		startDrag: function(evt) {
 			startDragging(evt, this.j.CurrentUid, 'copy');
-			//evt.dataTransfer.dropEffect = 'copy';
-			//evt.dataTransfer.effectAllowed = 'copy';
-			//evt.dataTransfer.setData('action', 'copy');
-			//evt.dataTransfer.setData('itemID', this.j.CurrentUid);
 			console.log('start clone: '+this.j.CurrentUid);
 		},
 	}
