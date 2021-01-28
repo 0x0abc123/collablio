@@ -1,0 +1,1784 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Page Title</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!--link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" /-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Site Description Here" />
+<link rel="stylesheet" href="bulma.min.css">
+<link rel="stylesheet" href="quill.snow.css">
+<!-- Include the JS libraries -->
+<script src="quill.min.js"></script>
+<script src="vue.min.js"></script>
+<style>
+@font-face {
+  font-family: "archivo-regular";
+  src: url("/Archivo-Regular.woff");
+} 
+
+body {
+ font-family: archivo-regular;
+}
+
+.ctxmenu {
+  cursor: context-menu;
+  position: absolute;
+}
+.ctxmenu li {
+  padding-left: 0.25em;
+  padding-right: 0.25em;
+}
+.ctxmenu li:hover{
+	background: #aaaaaa;
+	color: #eeeeee;
+}
+
+.ico-edit {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='feather feather-edit-3'%3E%3Cpath d='M12 20h9'%3E%3C/path%3E%3Cpath d='M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z'%3E%3C/path%3E%3C/svg%3E");
+  width: 1em;  
+  height: 1em;
+  margin-right: 1em;
+}
+.ico-del {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='feather feather-x-circle'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cline x1='15' y1='9' x2='9' y2='15'%3E%3C/line%3E%3Cline x1='9' y1='9' x2='15' y2='15'%3E%3C/line%3E%3C/svg%3E");
+  width: 1em;  
+  height: 1em;
+  margin-right: 1em;
+}
+.ico-new {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='feather feather-file-plus'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'%3E%3C/path%3E%3Cpolyline points='14 2 14 8 20 8'%3E%3C/polyline%3E%3Cline x1='12' y1='18' x2='12' y2='12'%3E%3C/line%3E%3Cline x1='9' y1='15' x2='15' y2='15'%3E%3C/line%3E%3C/svg%3E");
+  width: 1em;  
+  height: 1em;
+  margin-right: 1em;
+}
+.ico-left {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='feather feather-arrow-left-circle'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpolyline points='12 8 8 12 12 16'%3E%3C/polyline%3E%3Cline x1='16' y1='12' x2='8' y2='12'%3E%3C/line%3E%3C/svg%3E");
+  width: 1em;  
+  height: 1em;
+  margin-right: 1em;
+}
+
+.ico-load {
+  content: url('data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiIHN0YW5kYWxvbmU9Im5vIj8+PHN2ZyB4bWxuczpzdmc9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2ZXJzaW9uPSIxLjAiIHdpZHRoPSI2NHB4IiBoZWlnaHQ9IjY0cHgiIHZpZXdCb3g9IjAgMCAxMjggMTI4IiB4bWw6c3BhY2U9InByZXNlcnZlIj48Zz48cGF0aCBkPSJNNzEgMzkuMlYuNGE2My42IDYzLjYgMCAwIDEgMzMuOTYgMTQuNTdMNzcuNjggNDIuMjRhMjUuNTMgMjUuNTMgMCAwIDAtNi43LTMuMDN6IiBmaWxsPSIjMDAwIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoNDUgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoOTAgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iI2UxZTFlMSIgdHJhbnNmb3JtPSJyb3RhdGUoMTM1IDY0IDY0KSIvPjxwYXRoIGQ9Ik03MSAzOS4yVi40YTYzLjYgNjMuNiAwIDAgMSAzMy45NiAxNC41N0w3Ny42OCA0Mi4yNGEyNS41MyAyNS41MyAwIDAgMC02LjctMy4wM3oiIGZpbGw9IiNiZWJlYmUiIHRyYW5zZm9ybT0icm90YXRlKDE4MCA2NCA2NCkiLz48cGF0aCBkPSJNNzEgMzkuMlYuNGE2My42IDYzLjYgMCAwIDEgMzMuOTYgMTQuNTdMNzcuNjggNDIuMjRhMjUuNTMgMjUuNTMgMCAwIDAtNi43LTMuMDN6IiBmaWxsPSIjOTc5Nzk3IiB0cmFuc2Zvcm09InJvdGF0ZSgyMjUgNjQgNjQpIi8+PHBhdGggZD0iTTcxIDM5LjJWLjRhNjMuNiA2My42IDAgMCAxIDMzLjk2IDE0LjU3TDc3LjY4IDQyLjI0YTI1LjUzIDI1LjUzIDAgMCAwLTYuNy0zLjAzeiIgZmlsbD0iIzZlNmU2ZSIgdHJhbnNmb3JtPSJyb3RhdGUoMjcwIDY0IDY0KSIvPjxwYXRoIGQ9Ik03MSAzOS4yVi40YTYzLjYgNjMuNiAwIDAgMSAzMy45NiAxNC41N0w3Ny42OCA0Mi4yNGEyNS41MyAyNS41MyAwIDAgMC02LjctMy4wM3oiIGZpbGw9IiMzYzNjM2MiIHRyYW5zZm9ybT0icm90YXRlKDMxNSA2NCA2NCkiLz48YW5pbWF0ZVRyYW5zZm9ybSBhdHRyaWJ1dGVOYW1lPSJ0cmFuc2Zvcm0iIHR5cGU9InJvdGF0ZSIgdmFsdWVzPSIwIDY0IDY0OzQ1IDY0IDY0OzkwIDY0IDY0OzEzNSA2NCA2NDsxODAgNjQgNjQ7MjI1IDY0IDY0OzI3MCA2NCA2NDszMTUgNjQgNjQiIGNhbGNNb2RlPSJkaXNjcmV0ZSIgZHVyPSI3MjBtcyIgcmVwZWF0Q291bnQ9ImluZGVmaW5pdGUiPjwvYW5pbWF0ZVRyYW5zZm9ybT48L2c+PGc+PGNpcmNsZSBmaWxsPSIjMDAwIiBjeD0iNjMuNjYiIGN5PSI2My4xNiIgcj0iMTIiLz48YW5pbWF0ZSBhdHRyaWJ1dGVOYW1lPSJvcGFjaXR5IiBkdXI9IjcyMG1zIiBiZWdpbj0iMHMiIHJlcGVhdENvdW50PSJpbmRlZmluaXRlIiBrZXlUaW1lcz0iMDswLjU7MSIgdmFsdWVzPSIxOzA7MSIvPjwvZz48L3N2Zz4=');
+  width: 32px;  
+  height: 32px;
+}
+
+.ico-logo {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='grey' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='feather feather-aperture'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cline x1='14.31' y1='8' x2='20.05' y2='17.94'%3E%3C/line%3E%3Cline x1='9.69' y1='8' x2='21.17' y2='8'%3E%3C/line%3E%3Cline x1='7.38' y1='12' x2='13.12' y2='2.06'%3E%3C/line%3E%3Cline x1='9.69' y1='16' x2='3.95' y2='6.06'%3E%3C/line%3E%3Cline x1='14.31' y1='16' x2='2.83' y2='16'%3E%3C/line%3E%3Cline x1='16.62' y1='12' x2='10.88' y2='21.94'%3E%3C/line%3E%3C/svg%3E");
+  width: 32px;  
+  height: 32px;
+}
+
+.ico-upload {
+  content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='feather feather-upload'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'%3E%3C/path%3E%3Cpolyline points='17 8 12 3 7 8'%3E%3C/polyline%3E%3Cline x1='12' y1='3' x2='12' y2='15'%3E%3C/line%3E%3C/svg%3E");
+  width: 32px;  
+  height: 32px;
+}
+
+.ico-file2 {
+content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='feather feather-file-text'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'%3E%3C/path%3E%3Cpolyline points='14 2 14 8 20 8'%3E%3C/polyline%3E%3Cline x1='16' y1='13' x2='8' y2='13'%3E%3C/line%3E%3Cline x1='16' y1='17' x2='8' y2='17'%3E%3C/line%3E%3Cpolyline points='10 9 9 9 8 9'%3E%3C/polyline%3E%3C/svg%3E");
+  width: 96px;  
+  height: 96px;
+}
+
+.brk {
+  word-wrap: anywhere;
+}
+.mono {
+font-family: monospace;
+white-space: pre-wrap;
+white-space: -moz-pre-wrap;
+white-space: -pre-wrap;
+white-space: -o-pre-wrap;
+word-wrap: anywhere;
+}
+.ptr {
+ cursor: pointer;
+}
+.spacer5px {
+ height: 5px;
+}
+.sidenavbar {
+ height: 75vh;
+ overflow-y: scroll;
+
+}
+.tooloutput {
+ height: 72vh;
+ overflow-y: scroll;
+}
+.mpprojects {
+ height: 68vh;
+ overflow-y: scroll;
+}
+.fullw {
+ width: 100%;
+}
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+}
+ 
+::-webkit-scrollbar-thumb {
+  background: #888; 
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555; 
+}
+</style>
+</head>
+<body><div id="body_container" onclick="HideContextMenu()">
+
+<!-- Context Menu Templates -->
+<template id="ctxmenu-grphdr-templ">
+ <div id="ctxmenu-grphdr-div" class="ctxmenu box has-background-light p-2" style="display: none">
+   <ul>
+	<li @click="ctxmenuAction($event,'add')"><img class="ico-new">New Group</li>
+   </ul>
+ </div>
+</template>
+
+<template id="ctxmenu-group-templ">
+ <div id="ctxmenu-group-div" class="ctxmenu box has-background-light p-2" style="display: none">
+   <ul>
+	<li @click="ctxmenuAction($event,'edit')"><img class="ico-edit">Edit Group</li>
+	<li @click="ctxmenuAction($event,'del')"><img class="ico-del">Delete Group</li>
+	<li @click="ctxmenuAction($event,'add')"><img class="ico-new">New Subgroup</li>
+   </ul>
+ </div>
+</template>
+
+<template id="ctxmenu-subgroup-templ">
+ <div id="ctxmenu-subgroup-div" class="ctxmenu box has-background-light p-2" style="display: none">
+   <ul>
+	<li @click="ctxmenuAction($event,'edit')"><img class="ico-edit">Edit Subgroup</li>
+	<li @click="ctxmenuAction($event,'del')"><img class="ico-del">Delete Subgroup</li>
+	<li @click="ctxmenuAction($event,'add')"><img class="ico-new">New Item</li>
+   </ul>
+ </div>
+</template>
+
+<template id="ctxmenu-item-templ">
+ <div id="ctxmenu-item-div" class="ctxmenu box has-background-light p-2" style="display: none">
+   <ul>
+	<li @click="ctxmenuAction($event,'edit')"><img class="ico-edit">Edit Item</li>
+	<li @click="ctxmenuAction($event,'del')"><img class="ico-del">Delete Item</li>
+	<li @click="ctxmenuAction($event,'addnote')"><img class="ico-new">New Note Attachment</li>
+	<li @click="ctxmenuAction($event,'addfile')"><img class="ico-new">New File Attachment</li>
+   </ul>
+ </div>
+</template>
+
+<template id="ctxmenu-att-templ">
+ <div id="ctxmenu-att-div" class="ctxmenu box has-background-light p-2" style="display: none">
+   <ul>
+	<li @click="ctxmenuAction($event,'edit')"><img class="ico-edit">Edit Attachment</li>
+	<li @click="ctxmenuAction($event,'del')"><img class="ico-del">Delete Attachment</li>
+   </ul>
+ </div>
+</template>
+
+
+<!-- Main container -->
+<nav class="level box p-1">
+
+  <!-- Left side -->
+  <div class="level-left ml-3">
+    <div class="level-item mr-1">
+	<img id="id_logo" class="ico-logo" onClick="switchMainPane(0)">
+    </div>
+    <div class="level-item">
+      <p class="subtitle is-3 ptr" onClick="switchMainPane(0)">
+        <strong>Miruket</strong>
+      </p>
+    </div>
+    <div class="level-item">
+      <div class="field has-addons">
+        <p class="control">
+          <input class="input is-small" type="text" placeholder="Query the Data" disabled>
+        </p>
+        <p class="control">
+          <button class="button is-small" disabled>
+            Search
+          </button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right side -->
+  <div id="v_topnav" class="level-right">
+    <!--p class="level-item"><strong>All</strong></p-->
+    <p class="level-item"><strong>{{cl.ref.t}}</strong></p>
+    <p class="level-item pr-4" v-if="pr.ref.t"><strong>&nbsp;>>&emsp;{{pr.ref.t}}</strong></p>
+	<p class="level-item pr-4" v-else><strong>&nbsp;</strong></p>
+
+    <p class="level-item" onClick="switchMainPane(0)"><a class="button is-small">Clients</a></p>
+    <p class="level-item pr-4" onClick="switchMainPane(1)"><a class="button is-small">Projects</a></p>
+    <p class="level-item"><a @click="vShowTasks()" class="button is-success is-small">Tasks</a></p>
+  </div>
+
+</nav>
+
+<div id="columns_layout" class="columns ml-3">
+
+	  <div id="column_groups" class="column is-2">
+		<div id="v_column_groups"><!--:key="vUpdateKeyForColGrps"-->
+			<ctxmenu-grphdr></ctxmenu-grphdr>
+			<ctxmenu-group></ctxmenu-group>		
+			<ctxmenu-subgroup></ctxmenu-subgroup>		
+			<p class="subtitle is-6 ptr" @contextmenu = "showCtxMenuGrpHdr($event)">Groups/Hosts</p>
+			<div class="tile pr-3 is-vertical sidenavbar">
+			  <div class="content" v-for="gr in pr.ref.out">
+				<div class="has-text-primary-dark">
+				  <div class="content is-medium brk mb-2 ptr" @contextmenu="showCtxMenuGrp($event,gr.uid)"><b>{{gr.t}}</b></div>
+				</div>
+				<div>
+					<div class="tile" v-for="sg in gr.out">
+					  <div class="content is-small ptr brk mb-2" @contextmenu="showCtxMenuSubgrp($event,sg.uid)" @click="vSelectSubGroup(sg.uid)">
+					   <b>{{sg.t}}</b><br>[<span>{{sg.d}}</span><span></span>]
+					  </div>
+					</div>
+				</div>
+			  </div>
+				<div v-if="!pr.ref.out || pr.ref.out.length < 1" class="tile">
+				  <div class="content mb-2"><p><b>The current project does not contain any groups</b></p><p>Right-Click the header above to add one</p></div>
+				</div>
+
+			</div>
+		</div>
+	  </div><!--column_groups-->
+
+	<!--////VueBinding////-->
+	  <div id="column_details" class="column is-2">
+	   <div id="v_column_details">
+	    <ctxmenu-att></ctxmenu-att>
+		<ctxmenu-item></ctxmenu-item>
+        <p class="subtitle is-6">Entity Details</p>
+		<div class="tile is-vertical sidenavbar">
+
+			<div class="tile pr-3" v-for="item in sg.ref.out">
+			<!--div class="tile pr-3" v-for="item in sortedItems"-->
+			  <div class="content fullw is-small mb-3">
+				<div class="box brk ptr has-text-light has-background-info p-1 mb-1" @contextmenu="showCtxMenuItem($event,item.uid)">
+				 <b>&nbsp;{{item.t}}</b>
+				</div>
+				<div v-for="att in item.out">
+				  <span class="ptr brk" @click="vSelectAttachment(att.uid)" @contextmenu="showCtxMenuAtt($event,att.uid)">
+				   &raquo; [{{att.d}}] {{att.t}}
+				  </span><br>
+				</div>
+			  </div>
+			</div>
+
+			<div class="tile pr-3"  v-if="!sg.ref.out || sg.ref.out.length < 1">
+			  <div class="mb-3">
+				<div class="content is-size-1 mb-0">
+				 <img class="ico-left">&nbsp;
+				</div>
+				<div class="content is-small">
+				  <span class="brk">
+				   Select a sub-group with child items to see them displayed here
+				  </span><br>
+				</div>
+
+			  </div>
+			</div>
+
+		 </div>
+		</div>
+	  </div><!--column_details-->
+
+
+  <div class="column">
+
+	<div id="main_pane_default" class="box content is-medium">
+	<!--////VueBinding////-->
+		<div id="v_main_pane_default">
+			<h2>Welcome to Miruket</h2>
+			<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>{{main_pane_tooloutput.body}}
+			<div class="pb-3"><a class="button is-success is-medium" @click="vNewClient()">New Client</a></div>
+			<p>Select a Client to See Projects</p>
+			<div v-for="(cl, index) in mpd_clientlist.list">
+			<span class="ptr" @click="vSelectClient(cl.uid)">&raquo; {{cl.t}}</span><span class="pl-2 ptr" @click="vEditClient(cl.uid)"><img class="ico-edit"></span>
+			</div>
+		</div>
+	</div>
+
+	<div id="main_pane_projects" class="box content is-medium" style="display: none">
+	<!--////VueBinding////-->
+		<div id="v_main_pane_projects">
+			<h2>Projects for {{mpp_clientdetails.ref.t}}</h2>
+			<div class="mpprojects">
+				<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>{{main_pane_tooloutput.body}}
+				<p><a href="#" onclick="toggleModal()">stuff</a></p>
+
+				<div class="pb-3"><a class="button is-success is-medium" @click="vNewProject(mpp_clientdetails.ref.uid)">New Project</a></div>
+				<p>Select a Project from the List</p>
+				<div v-for="(pr, index) in mpp_projectslist.list">
+				<span class="ptr" @click="vSelectProject(index)">&raquo; {{pr.t}}</span><span class="pl-2 ptr" @click="vEditProject(pr.uid)"><img class="ico-edit"></span>
+				</div>
+			</div>
+		</div>
+	</div>
+ 
+	<div id="main_pane_tooloutput" class="box content is-small" style="display: none">
+	<!--////VueBinding////-->
+		<div id="v_main_pane_tooloutput">
+			<h2>[{{attachment.ref.d}}] {{attachment.ref.t}}</h2>
+			<!--is-family-monospace test1 -->
+			  <div id="tooloutput_content" class="tooloutput"><div class="mono">{{attachment.ref.b}}</div></div>
+			
+		</div>
+	</div>
+
+	<div id="main_pane_editable" style="display: none">
+		<!--div id="editable_buttonbar" class="mb-2">
+			<a class="button is-primary" id="toggleEditing" onclick="setQuillState('toggle')">Edit</a>
+			<div class="field">
+			  <div class="control"><input class="input is-info" type="text" placeholder="Info input"></div>
+			</div>
+		</div-->
+
+			  <div class="columns is-vcentered">				
+				<div class="column is-10">
+				  <div class="field">
+					<p class="control">
+					  <input id="editor_title" class="input titleedit" type="text" placeholder="Enter a Note Title">
+					</p>
+				  </div>
+				</div>
+				
+				<div class="column is-2">
+				  <a class="button is-primary" id="toggleEditing" onclick="setQuillState('toggle')">Edit</a>
+				</div>
+				<!--div class="level-item">
+				  <a class="button is-warning" id="canelEditing" onclick="">Cancel</a>
+				</div-->
+				
+			  </div>
+		
+		<div id="editor" style="height: 65vh;"></div> 
+    </div>
+ 
+ 	<div id="main_pane_testform" style="display: none">
+	<!--////VueBinding////-->
+	 <div id="v_main_pane_testform">
+		<h1 class="title">{{cl.action}} Details Form</h1>
+		<div class="tooloutput">
+		  <div class="pr-3">
+			<div class="field">
+			  <label class="label">Name</label>
+			  <div class="control">
+				<input class="input" type="text" placeholder="Client Short Name" v-model="cl.ref.t">
+			  </div>
+			</div>
+
+			<div class="field">
+			  <label class="label">Username</label>
+			  <div class="control">
+				<input class="input is-success" type="text" placeholder="Long Name or Description" v-model="cl.ref.d">
+			  </div>
+			  <p class="help is-success">This username is available</p>
+			</div>
+
+			<div class="field">
+			  <label class="label">Subject</label>
+			  <div class="control">
+				<div class="select">
+				  <select>
+					<option>Select dropdown</option>
+					<option>With options</option>
+				  </select>
+				</div>
+			  </div>
+			</div>
+
+			<div class="field">
+			  <label class="label">Message</label>
+			  <div class="control">
+				<textarea class="textarea" placeholder="Textarea"></textarea>
+			  </div>
+			</div>
+
+			<div class="field">
+			  <div class="control">
+				<label class="checkbox">
+				  <input type="checkbox">
+				  I agree to the <a href="#">terms and conditions</a>
+				</label>
+			  </div>
+			</div>
+
+			<div class="field">
+			  <div class="control">
+				<label class="radio">
+				  <input type="radio" name="question">
+				  Yes
+				</label>
+				<label class="radio">
+				  <input type="radio" name="question">
+				  No
+				</label>
+			  </div>
+			</div>
+
+			<div class="field is-grouped">
+			  <div class="control">
+				<button class="button is-link" @click="vSubmit()">Submit</button>
+			  </div>
+			  <div class="control">
+				<button class="button is-link is-light">Cancel</button>
+			  </div>
+			</div>
+			
+		  </div>
+		</div>
+	 </div>
+    </div><!-- end main_pane -->
+ 
+ 
+    <div id="main_pane_form_cl" style="display: none">
+	<!--////VueBinding////-->
+	 <div id="v_main_pane_form_cl">
+		<h1 class="title">{{cl.action}} Details Form</h1>
+		<div class="tooloutput">
+		  <div class="pr-3">
+		  
+			<div class="field">
+			  <label class="label">Short Name</label><div class="control"><input class="input" type="text" placeholder="Client Short Name" v-model="cl.ref.t"></div>
+			</div>
+
+			<div class="field">
+			  <label class="label">Description</label><div class="control"><input class="input is-success" type="text" placeholder="Client Full Name or Description" v-model="cl.ref.d"></div>
+			</div>
+
+			<div class="field">
+			  <label class="label">Notes</label><div class="control"><textarea class="textarea" placeholder="Client notes area" v-model="cl.ref.x"></textarea></div>
+			</div>
+
+			<div class="field is-grouped">
+			  <div class="control"><button class="button is-link" @click="vSubmit()">Save</button></div>
+			  <div class="control"><button class="button is-link is-light">Cancel</button></div>
+			</div>
+			
+		  </div>
+		</div>
+	 </div>
+    </div><!-- end main_pane -->
+
+
+    <div id="main_pane_form_pr" style="display: none">
+	<!--////VueBinding////-->
+	 <div id="v_main_pane_form_pr">
+		<h1 class="title">{{pr.action}} Details Form</h1>
+		<div class="tooloutput">
+		  <div class="pr-3">
+		  
+			<div class="field">
+			  <label class="label">Project Code</label><div class="control"><input class="input" type="text" placeholder="eg. 21234-CLIENT-PROJTYPE" v-model="pr.ref.t"></div>
+			</div>
+
+			<div class="field">
+			  <label class="label">Project Name</label><div class="control"><input class="input is-success" type="text" placeholder="Project Name" v-model="pr.ref.d"></div>
+			</div>
+
+			<div class="field">
+			  <label class="label">Notes</label><div class="control"><textarea class="textarea" placeholder="Project notes area" v-model="pr.ref.x"></textarea></div>
+			</div>
+
+			<div class="field is-grouped">
+			  <div class="control"><button class="button is-link" @click="vSubmit()">Save</button></div>
+			  <div class="control"><button class="button is-link is-light">Cancel</button></div>
+			</div>
+			
+		  </div>
+		</div>
+	 </div>
+    </div><!-- end main_pane -->
+
+    <div id="main_pane_form_gr" style="display: none">
+	<!--////VueBinding////-->
+	 <div id="v_main_pane_form_gr">
+		<h1 class="title">{{gr.action}} Details Form</h1>
+		<div class="tooloutput">
+		  <div class="pr-3">
+		  
+			<div class="field">
+			  <label class="label">Group Label</label><div class="control"><input class="input" type="text" placeholder="General" v-model="gr.ref.t"></div>
+			</div>
+
+			<div class="field">
+			  <label class="label">Group Short Description</label><div class="control"><input class="input is-success" type="text" placeholder="Description of group" v-model="gr.ref.d"></div>
+			</div>
+
+			<div class="field">
+			  <label class="label">Notes</label><div class="control"><textarea class="textarea" placeholder="Group notes area" v-model="gr.ref.x"></textarea></div>
+			</div>
+
+			<div class="field is-grouped">
+			  <div class="control"><button class="button is-link" @click="vSubmit()">Save</button></div>
+			  <div class="control"><button class="button is-link is-light">Cancel</button></div>
+			</div>
+			
+		  </div>
+		</div>
+	 </div>
+    </div><!-- end main_pane -->
+
+    <div id="main_pane_form_sg" style="display: none">
+	<!--////VueBinding////-->
+	 <div id="v_main_pane_form_sg">
+		<h1 class="title">{{sg.action}} Details Form</h1>
+		<div class="tooloutput">
+		  <div class="pr-3">
+		  
+			<div class="field">
+			  <label class="label">SubGroup Label/Identifier</label><div class="control"><input class="input" type="text" placeholder="10.1.2.3" v-model="sg.ref.t"></div>
+			</div>
+
+			<div class="field">
+			  <label class="label">SubGroup Alternate Label/Identifier</label><div class="control"><input class="input is-success" type="text" placeholder="hostname.example.local" v-model="sg.ref.d"></div>
+			</div>
+
+			<div class="field">
+			  <label class="label">Notes</label><div class="control"><textarea class="textarea" placeholder="SubGroup notes area" v-model="sg.ref.x"></textarea></div>
+			</div>
+
+			<div class="field is-grouped">
+			  <div class="control"><button class="button is-link" @click="vSubmit()">Save</button></div>
+			  <div class="control"><button class="button is-link is-light">Cancel</button></div>
+			</div>
+			
+		  </div>
+		</div>
+	 </div>
+    </div><!-- end main_pane -->
+
+    <div id="main_pane_form_it" style="display: none">
+	<!--////VueBinding////-->
+	 <div id="v_main_pane_form_it">
+		<h1 class="title">{{it.action}} Details Form</h1>
+		<div class="tooloutput">
+		  <div class="pr-3">
+		  
+			<div class="field">
+			  <label class="label">Item Label/Identifier</label><div class="control"><input class="input" type="text" placeholder="123 (tcp)" v-model="it.ref.t"></div>
+			</div>
+
+			<div class="field">
+			  <label class="label">Secondary Label/Identifier</label><div class="control"><input class="input is-success" type="text" placeholder="Description of item" v-model="it.ref.d"></div>
+			</div>
+
+			<div class="field">
+			  <label class="label">Notes</label><div class="control"><textarea class="textarea" placeholder="Item notes area" v-model="it.ref.x"></textarea></div>
+			</div>
+
+			<div class="field is-grouped">
+			  <div class="control"><button class="button is-link" @click="vSubmit()">Save</button></div>
+			  <div class="control"><button class="button is-link is-light">Cancel</button></div>
+			</div>
+			
+		  </div>
+		</div>
+	 </div>
+    </div><!-- end main_pane -->
+
+
+    <div id="main_pane_form_at" style="display: none">
+	<!--////VueBinding////-->
+	 <div id="v_main_pane_form_at">
+		<h1 class="title">{{at.action}} Details Form</h1>
+		<div class="tooloutput">
+		  <div class="pr-3">
+		  
+			<div class="field">
+			  <label class="label">Attachment Label</label><div class="control"><input class="input" type="text" placeholder="123 (tcp)" v-model="at.ref.t"></div>
+			</div>
+
+			<div class="field">
+			  <label class="label">Secondary Label/Identifier</label><div class="control"><input class="input is-success" type="text" placeholder="Type" v-model="at.ref.d" readonly></div>
+			</div>
+
+			<div class="field">
+			  <label class="label">Mime Type</label><div class="control"><input class="input" type="text" placeholder="Mime-Type" v-model="at.ref.x" readonly></div>
+			</div>
+
+			<div class="field is-grouped">
+			  <div class="control"><button class="button is-link" @click="vSubmit()">Save</button></div>
+			  <div class="control"><button class="button is-link is-light">Cancel</button></div>
+			</div>
+			
+		  </div>
+		</div>
+	 </div>
+    </div><!-- end main_pane -->
+
+    <div id="main_pane_form_attfile" style="display: none">
+	<!--////VueBinding////-->
+	 <div id="v_main_pane_form_attfile">
+	    <div class="file has-name">
+		  <label class="file-label">
+			<input class="file-input" type="file" id="at_file" name="upload">
+			<span class="file-cta">
+			  <span class="file-icon">
+				<img class="ico-upload">
+			  </span>
+			  <span class="file-label">
+				Choose a file…
+			  </span>
+			</span>
+			<span class="file-name" id="at_file_name">
+			  No file selected
+			</span>
+		  </label>
+		</div>
+		<div class="field is-grouped">
+			<div class="control">
+				<button class="button is-link" onclick="form_submit_form_at_file()">Submit</button>
+			</div>
+			<div class="control">
+				<button class="button is-link is-light">Cancel</button>
+			 </div>
+		</div>
+	 </div>
+    </div><!-- end main_pane -->
+
+ 
+ 	<div id="main_pane_showfile" class="box content is-small" style="display: none">
+	<!--////VueBinding////-->
+		<div id="v_main_pane_showfile">
+			<h2>[{{attachment.ref.d}}] {{attachment.ref.t}}</h2>
+			<div id="showfile_content" class="tooloutput">
+				<div v-if="attachment.ref.x.startsWith('image/')">
+				<img :src="'/download/'+attachment.ref.uid" id="imgview" class="ptr" onclick="toggleImgFullscreen()">
+				</div>
+				<div v-else>
+				<h3>Download</h3>
+				<p>
+				<a :href="'/download/'+attachment.ref.uid">
+				<img class="ico-file2"><br>
+				{{attachment.ref.t}}</a>
+				<br>({{attachment.ref.x}})
+				</p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+ 
+ 
+ 
+ 
+ 
+  </div><!--column-->
+</div><!--columns_layout-->
+
+
+
+<!--Modal Display-->
+<div id="modal_div" class="modal">
+  <div class="modal-background"></div>
+  <div class="modal-card">
+ 
+    <header class="modal-card-head">
+      <p id="modal_title" class="modal-card-title">Title</p>
+      <button class="delete" onclick="toggleModal()" aria-label="close"></button>
+    </header>
+
+    <section id="modal_pane_0" class="modal-card-body">
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+	  <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+    </section>
+
+    <section id="modal_pane_1" class="modal-card-body" style="display: none">
+      <p>Lorem ipsumodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+    </section>
+	
+    <footer class="modal-card-foot">
+      <button class="button is-success">Save changes</button>
+      <button class="button" onclick="toggleModal()">Cancel</button>
+    </footer>
+
+  </div>
+
+  <button class="modal-close is-large" aria-label="close"></button>
+</div>
+
+<div id="graph_layout"></div>
+
+
+<script>
+// script begin --------------------------------------------------------------------------------------------------------
+
+
+function toggleImgFullscreen() {
+  let elem = document.getElementById("imgview");
+
+  if (!document.fullscreenElement) {
+    elem.requestFullscreen().catch(err => {
+      alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+    });
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+
+//Initialize Quill editor
+
+var toolbarOptions = [
+  ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+  ['blockquote', 'code-block'],
+
+  [{ 'header': 1 }, { 'header': 2 }],               // custom button values
+  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+  [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
+  [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
+  [{ 'direction': 'rtl' }],                         // text direction
+
+  [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
+  [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+
+  [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
+  [{ 'font': [] }],
+  [{ 'align': [] }],
+  ['image'],
+  ['video'],
+  ['clean']                                         // remove formatting button
+];
+
+var quill = new Quill('#editor', {
+  modules: {
+    toolbar: toolbarOptions
+  },
+  theme: 'snow'
+});
+quill.disable();
+
+function populateQuill()
+{
+	// load stuff from vPtrAttach
+	// serializedDelta can be stored in persistent storage or sent in a message etc.
+	let serialisedDeltas = (vPtrAttach.ref.b) ? vPtrAttach.ref.b : "{}";
+	quill.setContents(JSON.parse(serialisedDeltas));	
+	let edtitle = document.getElementById('editor_title');
+	edtitle.value = vPtrAttach.ref.t;
+}
+
+function setQuillState(status)
+{
+	let edbutton = document.getElementById('toggleEditing');
+	let edtitle = document.getElementById('editor_title');
+	let isEnabled = quill.isEnabled();
+	let setEnabled = ((status == "enable") || ((status == "toggle") && !isEnabled));
+	if((status == "toggle") && isEnabled) {
+		let deltas = quill.getContents();
+		vPtrAttach.ref.b = JSON.stringify(deltas);
+		vPtrAttach.ref.x = MIME_MIRUKET_NOTE;
+		vPtrAttach.ref.t = edtitle.value;
+		//vPtrAttach.ref.t = 'Untitled Note';
+		vPtrAttach.ref.d = 'Note';
+		form_submit_form_at_note(vPtrAttach.parentID);
+	}
+	if(setEnabled) {
+		quill.enable();
+		edtitle.readOnly = false;
+		edbutton.innerText = "Save";
+	}
+	else {
+		quill.disable();
+		edtitle.readOnly = true;
+		edbutton.innerText = "Edit";
+	}
+
+}
+
+// data stores ------------------------------------------------------------
+
+function emptyNode() { return { t: '', d: '', e: '', l: '', x: '', b: '', tg : [], in: [], out: [], hasChanged: false} }
+
+var vPtrClients = { list : [] };
+var vPtrProjects = { list : [] };
+var vPtrClient = { action: '', parentID: '', ref : emptyNode() };
+var vPtrProject = { action: '', parentID: '', ref : emptyNode() };
+var vPtrGroup = { action: '', parentID: '', ref : emptyNode() };
+var vPtrSubGroup = { action: '', parentID: '', ref : emptyNode() };
+var vPtrItem = { action: '', parentID: '', ref : emptyNode() };
+var vPtrAttach = { action: '', parentID: '', ref : emptyNode() };
+
+var data_tooloutput = { title: "placeholder title", body: "placeholder body"};
+var displayedAttachment = emptyNode();
+
+var main_index = {};
+var main_clients_list = [];
+var main_projects_list = [];
+var current_groups_list = [];
+var current_items_list = [];
+var currentSubgroupUid = "";
+
+var lastProjTreeUpdateTime = 0;
+
+// show/hide the main panes -------------------------------------------------
+
+const D_NONE = "none";
+const D_SHOW = "block";
+
+var mainPanes = [
+	document.getElementById('main_pane_default'), //0
+	document.getElementById('main_pane_projects'), //1
+	document.getElementById('main_pane_editable'), //2
+	document.getElementById('main_pane_tooloutput'), //3
+	document.getElementById('main_pane_testform'), //4
+	document.getElementById('main_pane_form_cl'), //5
+	document.getElementById('main_pane_form_pr'), //6
+	document.getElementById('main_pane_form_gr'), //7
+	document.getElementById('main_pane_form_sg'), //8
+	document.getElementById('main_pane_form_it'), //9
+	document.getElementById('main_pane_form_at'), //10
+	document.getElementById('main_pane_form_attfile'), //11
+	document.getElementById('main_pane_showfile'), //12
+];
+
+function switchMainPane(paneNum)
+{
+	mainPanes.forEach((item,index) => {item.style.display = (index == paneNum) ? D_SHOW : D_NONE});
+}
+
+// show/hide the modal panes -------------------------------------------------
+
+var modalPanes = [
+	document.getElementById('modal_pane_0'), //0
+	document.getElementById('modal_pane_1'), //1
+];
+
+function switchModalPane(paneNum)
+{
+	modalPanes.forEach((item,index) => {item.style.display = (index == paneNum) ? D_SHOW : D_NONE});
+}
+
+// event handlers ------------------------------------------------------------
+
+function HideContextMenu(){
+	document.getElementById("ctxmenu-grphdr-div").style.display = "none";
+	document.getElementById("ctxmenu-group-div").style.display = "none";
+	document.getElementById("ctxmenu-subgroup-div").style.display = "none";
+	document.getElementById("ctxmenu-item-div").style.display = "none";
+	document.getElementById("ctxmenu-att-div").style.display = "none";
+}
+
+//client, project, group, subg, item, attach
+function toggleModal(pane_name, node_id)
+{
+   document.getElementById("modal_div").classList.toggle('is-active');
+}
+
+function showLoading(waiting)
+{
+  let elem = document.getElementById("body_container");
+  elem.style.cursor = (waiting) ? "wait" : "auto";
+  let logo = document.getElementById("id_logo");
+  if(waiting)
+	logo.classList.replace('ico-logo', 'ico-load');
+  else
+	logo.classList.replace('ico-load', 'ico-logo');
+}
+
+const fileInput = document.getElementById("at_file");
+  fileInput.onchange = () => {
+    if (fileInput.files.length > 0) {
+      const fileName = document.getElementById('at_file_name');
+      fileName.textContent = fileInput.files[0].name;
+    }
+  };
+
+function serialise(jsonObj) {
+    return JSON.stringify(jsonObj, (key,value) =>
+	{
+		if (key=="in" || key=="out") return undefined;
+		else return value;
+	} );
+}
+
+async function showAttachment(aID)
+{
+//console.log("showAtt",aID);
+
+	let att = main_index[aID];
+	if (att == null)
+		return;
+
+	/*
+	vPtrAttach.ref = att;
+
+	let isMiruketNote = (vPtrAttach.ref.x == MIME_MIRUKET_NOTE);
+	let isDisplayableText = (vPtrAttach.ref.x.startsWith('text/') || ['application/xml','application/json'].find(ele => ele == vPtrAttach.ref.x));
+	let isDisplayableImage = (vPtrAttach.ref.x.startsWith('image/'));
+	*/
+	if(att.x == '_') //empty body is not displayable
+		return;
+		
+	let isMiruketNote = (att.x == MIME_MIRUKET_NOTE);
+	let isDisplayableText = (att.x.startsWith('text/') || ['application/xml','application/json'].find(ele => ele == att.x));
+	let isDisplayableImage = (att.x.startsWith('image/'));
+	
+	//todo: avoid reloading if it hasn't changed
+	//	maybe just note the last modified time on the attachment metadata
+	//	refreshprojecttree
+	//  check if time has changed
+	//todo: only fetch if it's displayable (text or image)
+	if((isMiruketNote || isDisplayableText) && att.hasChanged)
+	{
+console.log("att refresh: ",att.l);
+		showLoading(true);
+		await fetch('/attachment/'+aID)
+			.then(response => response.json())
+			.then(data => { 
+				//vPtrAttach.ref.b = data.nodes[0].b;
+				updateProjectTree(data);
+				//vPtrAttach.ref = main_index[aID];
+				//vPtrAttach.parentID = main_index[aID].in[0].uid;
+				}
+			);
+		showLoading(false);
+		//vPtrAttach.ref = main_index[aID];
+		//vue_mp_showfile.$forceUpdate();
+	}
+	else console.log("att not displayable or hasnt changed: ",vPtrAttach.ref.x,vPtrAttach.ref.l);
+
+	vPtrAttach.ref = main_index[aID];
+	vPtrAttach.parentID = main_index[aID].in[0].uid;
+
+	var paneNum = 12;
+
+	// decide whether to display inline or display download link
+	// application/x-miruket-editable -> editable (2)
+	//if(vPtrAttach.ref.x == MIME_MIRUKET_NOTE) {
+	if(isMiruketNote) {
+		paneNum = 2;
+		populateQuill();
+		setQuillState("disable");
+	}
+	// text formats -> raw tooloutput (3)
+	//else if(vPtrAttach.ref.x.startsWith('text/') || ['application/xml','application/json'].find(ele => ele == vPtrAttach.ref.x))
+	else if(isDisplayableText)
+		paneNum = 3;
+	// image formats ->  image render (*create image pane)
+	// everything else => download link  (*create download pane)
+	else paneNum = 12;//should be 11 once we implement it; 
+	// find the appropriate pane to use
+	// render content and switch pane
+
+	switchMainPane(paneNum); 
+}
+
+// because of the vue reference to the global array, just assigning list = [] is breaking things, so need to do it this way
+function clearList(list)
+{
+	while(list.length > 0)
+		list.pop()
+}
+
+function clearObjectProperties(obj)
+{
+	for (var prop in obj) {
+		if (obj.hasOwnProperty(prop)) {
+			delete obj[prop];
+		}
+	}
+}
+ 
+function setCurrentNodeInfo(selectedNode,currentInfo)
+{	
+	currentInfo.name = selectedNode.t;
+	currentInfo.descr = selectedNode.d;
+	currentInfo.uid = selectedNode.uid;
+}
+
+function updateClientList(nodeList)
+{
+	let main_clients_list = vPtrClients.list;
+	clearList(main_clients_list);
+	for(let i=0; i <  nodeList.length; i++)
+	{
+		let dtype = nodeList[i]["dgraph.type"];
+		if(dtype && dtype[0] == TYPE_CLIENT)
+			main_clients_list.push(nodeList[i]);
+	}
+}
+
+function updateProjectsList(projList)
+{
+	let main_projects_list = vPtrProjects.list;
+	clearList(main_projects_list);
+	for(let i=0; i <  projList.length; i++)
+	{
+		let dtype = projList[i]["dgraph.type"];
+		if(dtype && dtype[0] == TYPE_PROJECT)
+			main_projects_list.push(projList[i]);
+	}
+}
+
+function updateNode(existingNode, updatedNode)
+{
+	existingNode.hasChanged = (updatedNode.l != existingNode.l); 
+	//what about properties that are gone from updatedNode?
+	for (const [key, value] of Object.entries(updatedNode)) {
+	  existingNode[key] = value;
+	  //console.log("update:",key,value);
+	}
+}
+
+function updateProjectTree(nodesAndEdges)
+{
+	// delete nodes
+	// delete edges
+	// upsert nodes
+	let nodes = nodesAndEdges.nodes;
+	for (let i = 0; i < nodes.length; i++)
+	{
+		//  if exists in mainindex then update
+		let node = nodes[i];
+		let tnode = main_index[node.uid];
+		if(tnode)
+			updateNode(tnode, node);
+		else
+		{
+			node.hasChanged = true;
+			main_index[node.uid] = node;
+			tnode = node;
+			//console.log("add main:",tnode.uid);
+		}
+
+		if(tnode["dgraph.type"][0] == TYPE_PROJECT) 
+			vPtrProject.ref = tnode;
+	}
+
+	// upsert edges
+	let edges = nodesAndEdges.edges;
+	for (let i = 0; i < edges.length; i++)
+	{
+		//  if exists in mainindex then update
+		let edge = edges[i];
+		edge.source = edge.fr;
+		edge.target = edge.to;		
+
+		if(!(edge.uid in main_index))
+			main_index[edge.uid] = edge;
+		let srcNode = main_index[edge.source];
+		let tgtNode = main_index[edge.target];
+		if (srcNode == null || tgtNode == null)
+		{
+			//console.log('a node was null',srcNode,tgtNode);
+			continue;
+		}
+		
+		//update src/target in/out sets
+		// var s = new Set();
+		// s.add(item)
+		// s.delete(item)
+		if(srcNode.out == null)
+			srcNode.out = [];
+		let tmpSet = new Set(srcNode.out);
+		tmpSet.add(tgtNode);
+		//need to do the sorting here because Vue is hanging when using computed or method sorting (maybe an issue with the circular references in/out?)
+		let src_type = srcNode["dgraph.type"][0];
+		srcNode.out = (src_type == TYPE_SUBGROUP) ? Array.from(tmpSet).sort(
+			(aa,bb) => { 
+				let a = aa.t.replace('/tcp','').replace('/udp',''); 
+				let b = bb.t.replace('/tcp','').replace('/udp',''); 
+				if (a =='Host Details') return -1; 
+				let na = parseInt(a,10); let nb = parseInt(b,10); 
+				if(isNaN(na) && isNaN(nb)) return a.localeCompare(b);
+				return (na < nb) ? -1 : (na > nb) ? 1 : (na == nb) ? 0 : isNaN(na) ? -1 : 1;
+				//^alpha is lower than numeric
+			}		
+		) : 
+		(src_type == TYPE_GROUP || src_type == TYPE_PROJECT) ? Array.from(tmpSet).sort(
+			(aa,bb) => {
+				let a = aa.t; let b = bb.t; //compare the label field
+				let na = NaN; let nb = NaN;
+				na = (ip_rgx.test(a)) ? convertIPtoNum(a) : parseInt(a,10); 
+				nb = (ip_rgx.test(b)) ? convertIPtoNum(b) : parseInt(b,10); 
+				if(isNaN(na) && isNaN(nb)) return a.localeCompare(b);
+				return (na < nb) ? -1 : (na > nb) ? 1 : (na == nb) ? 0 : isNaN(na) ? -1 : 1;
+				//^alpha is lower than numeric
+			}		
+		) : 
+		Array.from(tmpSet);
+		
+		if(tgtNode.in == null)
+			tgtNode.in = [];
+		tmpSet =  new Set(tgtNode.in);
+		tmpSet.add(srcNode);
+		tgtNode.in = Array.from(tmpSet);
+
+		//console.log("add edge",edge.uid);
+
+	}
+	lastProjTreeUpdateTime = nodesAndEdges.timestamp;
+	vue_col_groups.$forceUpdate();
+	vue_col_details.$forceUpdate();
+}
+
+async function showClients()
+{
+	//load clients and show in main pane
+	showLoading(true);
+	await fetch('/clients')
+		.then(response => response.json())
+		.then(data => { updateClientList(data.nodes) }
+		);
+	showLoading(false);
+	switchMainPane(0);
+}
+
+async function showProjectsForClient(id)
+{
+	let main_clients_list = vPtrClients.list;
+	//load projects for client and show in main pane projects
+	let selectedClient = main_clients_list.find(ele => ele.uid == id);
+	showLoading(true);
+	await fetch('/projects/'+selectedClient.uid)
+		.then(response => response.json())
+		.then(data => { updateProjectsList(data.nodes) }
+		);
+	showLoading(false);
+	//setCurrentNodeInfo(selectedClient,currentClientInfo);
+	vPtrClient.ref = selectedClient;
+//1	vPtrProject.parentID = vPtrClient.ref.uid;
+	switchMainPane(1);
+vPtrProject.ref = emptyNode();
+}
+
+function showProjectTree(p)
+{
+	let main_projects_list = vPtrProjects.list;
+	let selectedProject = main_projects_list[p];
+	//if(vPtrProject.ref.uid != selectedProject.uid)
+	//{
+		//setCurrentNodeInfo(selectedProject,currentProject);
+		vPtrProject.ref = selectedProject;
+	vPtrProject.parentID = vPtrClient.ref.uid;
+		vPtrSubGroup.ref = emptyNode();
+		loadProject(selectedProject.uid);
+	//}
+}
+
+async function loadProject(projID)
+{
+	showLoading(true);
+	await fetch('/projecttree/'+projID)
+		.then(response => response.json())
+		.then(data => { 
+			clearObjectProperties(main_index);
+			//clearList(current_groups_list); 
+			//clearList(current_items_list); 
+			updateProjectTree(data);
+			}
+		);
+	showLoading(false);	
+}
+
+async function refreshCurrentProjectTree()
+{
+	let projID = vPtrProject.ref.uid;
+//console.log('/projecttree/'+projID+'/'+lastProjTreeUpdateTime);
+	showLoading(true);
+	await fetch('/projecttree/'+projID+'/'+lastProjTreeUpdateTime)
+		.then(response => response.json())
+		.then(data => { 
+			updateProjectTree(data);
+			}
+		);
+	showLoading(false);	
+}
+
+function showTasks()
+{
+	console.log("show tasks");
+}
+
+async function showSubGroupItems(sg)
+{
+	if(sg == vPtrSubGroup.ref.uid)
+		return; //dont fetch again
+
+	vPtrSubGroup.ref = main_index[sg];
+
+	showLoading(true);
+	await fetch('/items/'+vPtrSubGroup.ref.uid)
+		.then(response => response.json())
+		.then(data => { 
+			//clearList(current_items_list); 
+			updateProjectTree(data);
+			}
+		);
+	showLoading(false);
+
+}
+
+function form_setup_testform(id)
+{
+// whether it's an add or edit there should be an id
+// check what the node type is using the id, which should indicate whether add (id is parent) or update (id is the existing node) 
+	let main_clients_list = vPtrClients.list;
+	vPtrClient.ref = main_clients_list[0];
+	vPtrClient.action = 'Edit';
+	switchMainPane(4);
+	//console.log("form setup testform",id);
+}
+
+function form_submit_testform(id)
+{	
+	// read the vPtrXXXX properties and call the appropriate upsert API
+	//console.log("submit_testform",vPtrClient.ref.t, vPtrClient.ref.uid);
+}
+
+function form_setup_form_cl(id)
+{
+// the id should only relate to a client node, if it's not or it's blank then create a new one
+	let main_clients_list = vPtrClients.list;
+	let existingCl = main_clients_list.find(ele => ele.uid == id);
+	if(existingCl) {
+		vPtrClient.ref =  existingCl;
+		vPtrClient.action = 'Edit Client';
+	}
+	else {
+		vPtrClient.ref =  emptyNode();
+		vPtrClient.ref["dgraph.type"] = [TYPE_CLIENT];
+		vPtrClient.action = 'Create New Client';
+	}
+	switchMainPane(5);
+}
+
+function form_submit_form_cl()
+{	
+	// read the vPtrXXXX properties and call the appropriate upsert API
+	//console.log("submit_form_cl",serialise(vPtrClient.ref));
+	upsertGeneric('/client', vPtrClient.ref);
+}
+
+function form_setup_form_pr(id)
+{
+// whether it's an add or edit there should be an id
+// check what the node type is using the id, which should indicate whether add (id is parent) or update (id is the existing node) 
+
+	let main_projects_list = vPtrProjects.list;
+	let existingPr = main_projects_list.find(ele => ele.uid == id);
+	if(existingPr) {
+		vPtrProject.ref =  existingPr;
+		vPtrProject.action = 'Edit Project';
+	}
+	else {
+		vPtrProject.ref = emptyNode();
+		vPtrProject.ref["dgraph.type"] = [TYPE_PROJECT];
+		vPtrProject.action = 'Create New Project';
+	}
+	vPtrProject.parentID = vPtrClient.ref.uid;
+	switchMainPane(6);
+}
+
+function form_submit_form_pr()
+{	
+	// read the vPtrXXXX properties and call the appropriate upsert API
+	// to obtain the project's parent client ID, use vPtrClient.ref.uid
+	//console.log("submit_form",serialise(vPtrProject.ref));
+	upsertGeneric('/project/'+vPtrProject.parentID, vPtrProject.ref);
+}
+
+
+function form_setup_form_gr(id)
+{
+// whether it's an add or edit there should be an id
+// check what the node type is by looking up the id, which should indicate whether add (id is parent) or update (id is the existing node) 
+
+	let existingN = main_index[id];
+	if(existingN && existingN["dgraph.type"][0] == TYPE_GROUP) {
+		vPtrGroup.ref =  existingN;
+		vPtrGroup.action = 'Edit Group';
+	}
+	else {
+		vPtrGroup.ref =  emptyNode();
+		vPtrGroup.ref["dgraph.type"] = [TYPE_GROUP];
+		vPtrGroup.action = 'Create New Group ('+vPtrProject.ref.t+')';
+	}
+	vPtrGroup.parentID = vPtrProject.ref.uid;
+	switchMainPane(7);
+}
+
+function form_submit_form_gr()
+{	
+	// read the vPtrXXXX properties and call the appropriate upsert API
+	// use vPtrGroup.parentID as the proj ID 
+	//console.log("submit_form",serialise(vPtrGroup.ref));
+	upsertGeneric('/group/'+vPtrGroup.parentID, vPtrGroup.ref);
+}
+
+
+function form_setup_form_generic(id, vPtr, thisType, parentType, stringLabel, paneNum)
+{
+// whether it's an add or edit there should be an id
+// check what the node type is by looking up the id, which should indicate whether add (id is parent) or update (id is the existing node) 
+
+	let existingN = main_index[id];
+	vPtr.parentID = null;
+	if(existingN) {
+		if(existingN["dgraph.type"][0] == thisType) {
+			vPtr.ref =  existingN;
+			vPtr.parentID = existingN.in[0].uid; //shouldnt matter if there's more than 1 parent, just need to link it to one
+			vPtr.action = 'Edit '+stringLabel;
+		} else if (existingN["dgraph.type"][0] == parentType) {
+			vPtr.ref =  emptyNode();
+			vPtr.ref["dgraph.type"] = [thisType];
+			vPtr.parentID = id;
+			vPtr.action = 'Create New '+stringLabel+' ('+existingN.t+')';
+		}
+	}
+	if(vPtr.parentID)
+		switchMainPane(paneNum);
+}
+
+function form_setup_form_sg(id)
+{
+	form_setup_form_generic(id, vPtrSubGroup, TYPE_SUBGROUP, TYPE_GROUP, 'Sub Group', 8);
+}
+
+function form_submit_form_sg()
+{	
+	// read the vPtrXXXX properties and call the appropriate upsert API
+	//console.log("submit_form",serialise(vPtrSubGroup.ref));
+	upsertGeneric('/subgroup/'+vPtrSubGroup.parentID, vPtrSubGroup.ref);
+}
+
+function form_setup_form_it(id)
+{
+	form_setup_form_generic(id, vPtrItem, TYPE_ITEM, TYPE_SUBGROUP, 'Item', 9);
+}
+
+function form_submit_form_it()
+{	
+	// read the vPtrXXXX properties and call the appropriate upsert API
+	////console.log("submit_form",serialise(vPtrItem.ref));
+	upsertGeneric('/item/'+vPtrItem.parentID, vPtrItem.ref);
+	if(vPtrItem.parentID != vPtrSubGroup.ref.id) showSubGroupItems(vPtrItem.parentID);
+}
+
+async function form_setup_form_at_gen(id,attType)
+{
+	//form_setup_form_generic(id, vPtrAttach, TYPE_ATTACHMENT, TYPE_ITEM, 'Attachment', 10);
+	let paneNum = 10;
+	let stringLabel = "Attachment";
+	let existingN = main_index[id];
+	vPtrAttach.parentID = null;
+	if(existingN) {
+//console.log("form setup at gen",existingN.in);
+		if(existingN["dgraph.type"][0] == TYPE_ATTACHMENT) {
+			vPtrAttach.ref =  existingN;
+			vPtrAttach.parentID = existingN.in[0].uid; //shouldnt matter if there's more than 1 parent, just need to link it to one
+			vPtrAttach.action = 'Edit '+stringLabel;
+			//if its mime-type is x-miruket-editable load the full attachment and show the main_pane_editable
+			if(existingN.x == MIME_MIRUKET_NOTE) {
+				paneNum = 2;
+				if(!existingN.b) {
+					showLoading(true);
+					await fetch('/attachment/'+existingN.uid)
+						.then(response => response.json())
+						.then(data => { updateProjectTree(data);}
+						);
+					showLoading(false);
+				}
+				populateQuill();
+				setQuillState("enable");
+			}
+		} else if (existingN["dgraph.type"][0] == TYPE_ITEM) {
+			vPtrAttach.ref =  emptyNode();
+			vPtrAttach.ref["dgraph.type"] = [TYPE_ATTACHMENT];
+			vPtrAttach.parentID = id;
+			vPtrAttach.action = 'Create New '+stringLabel+' ('+existingN.t+')';
+			//check the attType, if its a note then set the mimetype and show the main_pane_editable
+			if(attType == "note") {
+				vPtrAttach.ref.x = MIME_MIRUKET_NOTE;
+				paneNum = 2;
+				populateQuill();
+				setQuillState("enable");
+			//  if its a file then show the file upload form
+			} else if (attType == "file") {
+				paneNum = 11;
+			}
+		}
+	}
+	if(vPtrAttach.parentID)
+		switchMainPane(paneNum);
+	//else
+		//console.log("setupformatgen failed",id,attType,existingN.in[0].uid);
+
+}
+
+
+async function upsertGeneric(targetURL,data)
+{	
+	// read the vPtrXXXX properties and call the appropriate upsert API
+	//console.log("submit_form",serialise(vPtrAttach.ref));
+	delete data.l;
+	showLoading(true);
+	console.log("upsert: ",targetURL,serialise(data));
+	await fetch(targetURL,{
+		method: 'POST',
+		headers: {
+		  'Content-Type': 'application/json'
+		  // 'Content-Type': 'application/x-www-form-urlencoded',
+		},
+		body: serialise(data) // body data type must match "Content-Type" header
+	})
+	.then(response => response.json())
+	.then(rdata => { console.log(JSON.stringify(rdata)); }
+	);
+	let dtype = data["dgraph.type"][0];
+	if(dtype == TYPE_CLIENT)
+		showClients();
+	else if(dtype == TYPE_PROJECT)
+		showProjectsForClient(vPtrClient.ref.uid);
+	else
+		refreshCurrentProjectTree();
+	showLoading(false);
+}
+
+function form_submit_form_at_note()
+{	
+	upsertGeneric('/attachment/'+vPtrAttach.parentID, vPtrAttach.ref);
+}
+
+function form_submit_form_at()
+{	
+	// read the vPtrXXXX properties and call the appropriate upsert API
+	console.log("submit_form",serialise(vPtrAttach.ref));
+}
+
+async function form_submit_form_at_file()
+{
+	const input = document.getElementById('at_file');
+
+	let params = {};
+	if(vPtrAttach.ref.uid)
+		params.attachid = vPtrAttach.ref.uid;
+	params.itemid = vPtrAttach.parentID;
+	
+	let data = new FormData();
+	data.append('filedata', input.files[0]);
+	data.append('type', 'file_upload');
+	data.append('_p', JSON.stringify(params));
+	//do this on the server:
+	//data.append('synchronous',true);
+	
+	//submit the upload via the upload endpoint
+	//important: don't set the content-type
+	await fetch('upload', {
+	  method: 'POST',
+	  //mode: 'no-cors',
+	  body: data
+	}//).then(response => response.json()).then(rdata => { console.log(JSON.stringify(rdata)); }
+	);
+	
+	refreshCurrentProjectTree();
+}
+
+const ip_rgx = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
+
+function convertIPtoNum(ipstr) {
+  let octs = ipstr.split('.');
+  return (octs[0] * 16777216.0) + (octs[1] * 65536.0) + (octs[2] * 256.0) + octs[3] * 1.0;
+}
+
+
+// vueJS bindings ------------------------------------------------------------
+
+// each div where we use style display:none (i.e. the main pane containers) 
+//  must have a child-div that vue binds to instead of the one with the style attribute otherwise it doesn't work
+
+var ctxmenu_group_selected_uid = "";
+var ctxmenu_subgroup_selected_uid = "";
+var ctxmenu_item_selected_uid = "";
+var ctxmenu_att_selected_uid = "";
+
+function contextMenuFor(ctxmenudiv,event)
+{
+	HideContextMenu();
+	event.preventDefault();
+	let menu = document.getElementById(ctxmenudiv);
+	menu.style.left = event.pageX + 'px';
+	menu.style.top = event.pageY + 'px';
+	menu.style.display = 'block';
+}
+
+var ctxmenu_grphdr_funcs = { 
+	add: function () { form_setup_form_gr(); }, //add grp to proj
+};
+Vue.component('ctxmenu-grphdr', {
+ template: '#ctxmenu-grphdr-templ',
+ data() { return { param : null }},
+ methods: {
+	ctxmenuAction: function (e) {
+	   console.log ( "add group to ",vPtrProject.ref.uid );
+	   ctxmenu_grphdr_funcs['add']();
+  }
+ }
+});
+
+
+var ctxmenu_group_funcs = { 
+	add: function (id) { form_setup_form_sg(id); }, //add subgrp to grp
+	edit: function (id) { form_setup_form_gr(id); }, //edit grp
+	del: function (id) { alert("del item: "+id); }, //del grp
+};
+Vue.component('ctxmenu-group', {
+ template: '#ctxmenu-group-templ',
+ data() { return { param : null }},
+ methods: {
+	ctxmenuAction: function (e, ac) {
+	   console.log ( ac + " <ctxmenu-grp> " + ctxmenu_group_selected_uid ); //e.target.parentElement.parentElement.param );
+ 	   ctxmenu_group_funcs[ac](ctxmenu_group_selected_uid);
+ }
+ }
+});
+
+var ctxmenu_subgroup_funcs = { 
+	add: function (id) { form_setup_form_it(id); }, //add item to sgrp
+	edit: function (id) { form_setup_form_sg(id); }, //edit sgrp
+	del: function (id) { alert("del item: "+id); }, //del sgrp
+};
+Vue.component('ctxmenu-subgroup', {
+ template: '#ctxmenu-subgroup-templ',
+ data() { return { param : null }},
+ methods: {
+	ctxmenuAction: function (e, ac) {
+	   console.log ( ac + " <ctxmenu-sgrp> " + ctxmenu_subgroup_selected_uid );
+	   ctxmenu_subgroup_funcs[ac](ctxmenu_subgroup_selected_uid);
+  }
+ }
+});
+
+var ctxmenu_item_funcs = { 
+	add: function (id) { form_setup_form_at_gen(id); }, //add att to item
+	addnote: function (id) { form_setup_form_at_gen(id,'note'); }, //add att to item
+	addfile: function (id) { form_setup_form_at_gen(id,'file'); }, //add att to item
+	edit: function (id) { form_setup_form_it(id); }, //edit item
+	del: function (id) { alert("del item: "+id); }, //del item
+};
+Vue.component('ctxmenu-item', {
+ template: '#ctxmenu-item-templ',
+ data() { return { param : null }},
+ methods: {
+	ctxmenuAction: function (e, ac) {
+	   console.log ( ac + " <ctxmenu-item> " + ctxmenu_item_selected_uid );
+	   ctxmenu_item_funcs[ac](ctxmenu_item_selected_uid);
+  }
+ }
+});
+
+var ctxmenu_att_funcs = { 
+	edit: function (id) { form_setup_form_at_gen(id); }, //edit att
+	del: function (id) { alert("del item: "+id); }, //del att
+};
+Vue.component('ctxmenu-att', {
+ template: '#ctxmenu-att-templ',
+ data() { return { param : null }},
+ methods: {
+	ctxmenuAction: function (e, ac) {
+	   console.log ( ac + " <ctxmenu-att> " + ctxmenu_att_selected_uid );
+	   ctxmenu_att_funcs[ac](ctxmenu_att_selected_uid);
+  }
+ }
+});
+
+//main_pane_testform
+var vue_mp_testform = new Vue({
+	el: '#v_main_pane_testform',
+	data: { cl: vPtrClient },
+	methods : { vSubmit : function(){ form_submit_testform(); } }
+});
+
+var vue_mp_form_cl = new Vue({
+	el: '#v_main_pane_form_cl',
+	data: { cl: vPtrClient },
+	methods : { vSubmit : function(){ form_submit_form_cl(); } }
+});
+
+var vue_mp_form_pr = new Vue({
+	el: '#v_main_pane_form_pr',
+	data: { pr: vPtrProject },
+	methods : { vSubmit : function(){ form_submit_form_pr(); } }
+});
+
+var vue_mp_form_gr = new Vue({
+	el: '#v_main_pane_form_gr',
+	data: { gr: vPtrGroup },
+	methods : { vSubmit : function(){ form_submit_form_gr(); } }
+});
+
+var vue_mp_form_sg = new Vue({
+	el: '#v_main_pane_form_sg',
+	data: { sg: vPtrSubGroup },
+	methods : { vSubmit : function(){ form_submit_form_sg(); } }
+});
+
+var vue_mp_form_it = new Vue({
+	el: '#v_main_pane_form_it',
+	data: { it: vPtrItem },
+	methods : { vSubmit : function(){ form_submit_form_it(); } }
+});
+
+var vue_mp_form_at = new Vue({
+	el: '#v_main_pane_form_at',
+	data: { at: vPtrAttach },
+	methods : { vSubmit : function(){ form_submit_form_at(); } }
+});
+
+
+//main_pane_tooloutput
+var vue_mp_tooloutput = new Vue({
+	el: '#v_main_pane_tooloutput',
+	data: {  // globally, can access using vm.$data.foo
+	   attachment: vPtrAttach //or simpler to assign objects from outside the scope
+	},
+	methods : {
+		testclick : function(event) {
+			alert(event.target.innerText);
+		}
+	}
+});
+
+//main_pane_showfile
+var vue_mp_showfile = new Vue({
+	el: '#v_main_pane_showfile',
+	data: {  // globally, can access using vm.$data.foo
+	   attachment: vPtrAttach //or simpler to assign objects from outside the scope
+	},
+	methods : {
+		testclick : function(event) {
+			alert(event.target.innerText);
+		}
+	}
+});
+
+//main_pane_default
+var vue_mp_default = new Vue({
+	el: '#v_main_pane_default',
+	data: {  // globally, can access using vm.$data.foo
+	   mpd_clientlist: vPtrClients //or simpler to assign objects from outside the scope
+	},
+	methods : {
+		vSelectClient : function(c){ 
+			showProjectsForClient(c);
+		},
+		vNewClient : function() {
+			form_setup_form_cl();
+		},
+		vEditClient : function(id) {
+			form_setup_form_cl(id);
+		}
+	}
+});
+
+//main_pane_projects
+var vue_mp_projects = new Vue({
+	el: '#v_main_pane_projects',
+	data: {
+	   mpp_clientdetails: vPtrClient,
+	   mpp_projectslist: vPtrProjects
+	},
+	methods : {
+		vSelectProject : function(p){ 
+			showProjectTree(p);
+		},
+		vNewProject : function(id) {
+			form_setup_form_pr(id);
+		},
+		vEditProject : function(id) {
+			form_setup_form_pr(id);
+		}
+	}
+});
+
+
+
+//column_groups
+var vue_col_groups = new Vue({
+	el: '#v_column_groups',
+	data: { 
+	   pr: vPtrProject
+	},
+	methods : {
+        showCtxMenuGrpHdr: function (e) {
+              contextMenuFor("ctxmenu-grphdr-div",e);
+        }, 
+        showCtxMenuGrp: function (e,id) {
+              contextMenuFor("ctxmenu-group-div",e);
+			  ctxmenu_group_selected_uid = id;
+        }, 
+        showCtxMenuSubgrp: function (e,id) {
+              contextMenuFor("ctxmenu-subgroup-div",e);
+			  ctxmenu_subgroup_selected_uid = id;
+        }, 
+		vSelectSubGroup :  function(sg){ 
+			showSubGroupItems(sg);
+		}
+	}
+});
+
+//column_details
+var vue_col_details = new Vue({
+	el: '#v_column_details',
+	data: { 
+	   sg: vPtrSubGroup
+	},
+	methods : {
+        showCtxMenuItem: function (e,id) {
+              contextMenuFor("ctxmenu-item-div",e);
+			  ctxmenu_item_selected_uid = id;
+        }, 
+        showCtxMenuAtt: function (e,id) {
+              contextMenuFor("ctxmenu-att-div",e);
+			  ctxmenu_att_selected_uid = id;
+        }, 
+		vSelectAttachment : function(a) {
+			showAttachment(a);
+		}
+	}
+});
+
+
+var vue_topnav = new Vue({
+	el: '#v_topnav',
+	data: { 
+	   cl: vPtrClient,
+	   pr: vPtrProject
+	},
+	methods: {
+		vShowTasks: function() {
+			showTasks();
+		}
+	}
+});
+
+const TYPE_CLIENT = "Cl";
+const TYPE_PROJECT = "Pr";
+const TYPE_GROUP = "Gr";
+const TYPE_SUBGROUP = "Sg";
+const TYPE_ITEM = "It";
+const TYPE_ATTACHMENT = "At";
+
+const MIME_MIRUKET_NOTE = "x-miruket-editable";
+
+//startup, fetch clients
+showClients();
+
+</script>
+
+</div></body></html>

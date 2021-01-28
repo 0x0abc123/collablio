@@ -1,0 +1,692 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Page Title</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!--link rel="shortcut icon" href="/images/favicon.ico" type="image/x-icon" /-->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Site Description Here" />
+<link rel="stylesheet" href="bulma.min.css">
+<link rel="stylesheet" href="quill.snow.css">
+<!-- Include the JS libraries -->
+<script src="quill.min.js"></script>
+<script src="vue.min.js"></script>
+<style>
+@font-face {
+  font-family: "archivo-regular";
+  src: url("/Archivo-Regular.woff");
+} 
+
+body {
+ font-family: archivo-regular;
+}
+
+
+
+.ptr {
+ cursor: pointer;
+}
+.spacer5px {
+ height: 5px;
+}
+.sidenavbar {
+ height: 75vh;
+ overflow-y: scroll;
+
+}
+.tooloutput {
+ height: 72vh;
+ overflow-y: scroll;
+}
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+}
+ 
+::-webkit-scrollbar-thumb {
+  background: #888; 
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555; 
+}
+</style>
+</head>
+<body><div id="body_container">
+
+<!-- Main container -->
+<nav class="level box p-1">
+  <!-- Left side -->
+  <div class="level-left ml-3">
+    <div class="level-item">
+      <p class="subtitle is-3 ptr" onClick="switchMainPane(0)">
+        <strong>Miruket</strong>
+      </p>
+    </div>
+    <div class="level-item">
+      <div class="field has-addons">
+        <p class="control">
+          <input class="input is-small" type="text" placeholder="Query the Data">
+        </p>
+        <p class="control">
+          <button class="button is-small">
+            Search
+          </button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right side -->
+  <div class="level-right">
+    <p class="level-item"><strong>All</strong></p>
+    <p class="level-item"><a>Published</a></p>
+    <p class="level-item"><a>Drafts</a></p>
+    <p class="level-item"><a>Deleted</a></p>
+    <p class="level-item"><a class="button is-success is-small">New</a></p>
+  </div>
+</nav>
+
+<div id="columns_layout" class="columns ml-3">
+
+	  <div id="column_groups" class="column is-2">
+		<div id="v_column_groups" ><!--:key="vUpdateKeyForColGrps"-->
+			<p class="subtitle is-6">Groups/Hosts</p>
+			<div class="tile is-vertical sidenavbar">
+			  <div v-for="gr in cg_groupslist">
+				<div class="has-text-primary-dark">
+				  <div class="content is-medium mb-2"><b>{{gr.t}}</b></div>
+				</div>
+				<div>
+					<div class="tile" v-for="sg in gr.out">
+					  <div class="content is-small ptr mb-2" @click="vSelectSubGroup(sg.uid)"><b>{{sg.t}}</b><br>[<span>{{sg.d}}</span><span></span>]</div>
+					</div>
+				</div>
+			  </div>
+				<div class="tile">
+				  <div class="content is-small ptr mb-2"><b>192.168.10.3</b><br>[ghiabcdefghi.company.local]</div>
+				</div>
+				<div class="tile">
+				  <div class="content is-small ptr mb-2"><b>192.168.10.13</b><br>[-]</div>
+				</div>
+				<div class="tile">
+				  <div class="content is-small ptr mb-2"><b>192.168.10.161</b><br>[dc03.company.local]</div>
+				</div>
+
+			</div>
+		</div>
+	  </div><!--column_groups-->
+
+	<!--////VueBinding////-->
+	  <div id="column_details" class="column is-2">
+	   <div id="v_column_details">
+        <p class="subtitle is-6">Entity Details</p>
+		<div class="tile is-vertical sidenavbar">
+
+			<div class="tile" v-for="item in cd_itemslist">
+			  <div class="content is-small mb-3">
+				<span class="tag is-info mb-1"><b>{{item.t}}</b></span><br>
+				<div v-for="att in item.out"><span class="ptr" @click="vSelectAttachment(att.uid)">&raquo; [{{att.x}}] {{att.t}}</span><br></div>
+			  </div>
+			</div>
+<!--
+			<div class="tile">
+			  <div class="content is-small mb-3">
+				<span class="tag is-warning mb-1"><b>Host Details</b></span><br>
+				<span class="ptr" @click="vtestHttpRequest1">&raquo; [hostnames] test 2</span><br>
+				<span class="ptr" @click="vtestHttpRequest2">&raquo; [note] random host notes</span><br>
+			  </div>
+			</div>
+			<div class="tile">
+			  <div class="content is-small mb-3">
+				<span class="tag is-info mb-1"><b>80 (tcp)</b></span><br>
+				<span class="ptr" @click="vshowAttachment('test_edit')">&raquo; [nmap] test 2</span><br>
+				<span class="ptr" @click="vshowAttachment('test_tool')">&raquo; [nessus] CVE-2018-9872 Stored Cross-Site Scripting</span><br>
+			  </div>
+			</div>
+-->
+
+			<div class="tile">
+			  <div class="content is-small mb-3">
+				<span class="tag is-info mb-1"><b>443 (tcp)</b></span><br>
+				<span class="ptr">&raquo; [nmap] test 2</span><br>
+				<span class="ptr">&raquo; [cme] smb scan</span><br>
+				<span class="ptr">&raquo; [note] Help Me Please</span><br>
+			  </div>
+			</div>
+			<div class="tile">
+			  <div class="content is-small mb-3">
+				<span class="tag is-info mb-1"><b>8443 (tcp)</b></span><br>
+				<span class="ptr">&raquo; [nmap] test baladlhfdh</span><br>
+				<span class="ptr">&raquo; [cme] smb scan</span><br>
+				<span class="ptr">&raquo; [note] manual note here</span><br>
+			  </div>
+			</div>
+			<div class="tile">
+			  <div class="content is-small mb-3">
+				<span class="tag is-info mb-1"><b>8444 (tcp)</b></span><br>
+				<span class="ptr">&raquo; [nmap] test baladlhfdh</span><br>
+				<span class="ptr">&raquo; [cme] smb scan</span><br>
+				<span class="ptr">&raquo; [note] manual note here</span><br>
+			  </div>
+			</div>
+			<div class="tile">
+			  <div class="content is-small">
+				<span class="tag is-info mb-1"><b>27017 (tcp)</b></span><br>
+				<span class="ptr">&raquo; [nmap] open port</span><br>
+				<span class="ptr">&raquo; [note] smb scan</span><br>
+			  </div>
+			</div>
+		 </div>
+		</div>
+	  </div><!--column_details-->
+
+
+  <div class="column">
+    <!--i think the v-if tags here have just been left lying around and have no effect on anything?-->
+	<div id="main_pane_editable" style="display: none" v-if="paneVisible == 1"><!--style="display: none"-->
+		<div id="editable_buttonbar" class="mb-2">
+			<a class="button is-primary" id="toggleEditing" onclick="javascript:toggleQuill()">Edit</a>
+		</div>
+		
+		<div id="editor" style="height: 65vh;">
+		  <p>Hello World!</p>
+		  <p>Some initial <strong>bold</strong> text</p>
+		  <p><br></p>
+		</div> 
+    </div>
+	
+	<!--////VueBinding////-->
+	<div id="main_pane_tooloutput" class="box content is-small" style="display: none">
+		<div id="v_main_pane_tooloutput">
+			<h2>Test {{attachment.title}}</h2>
+			<div id="tooloutput_content" class="is-family-monospace tooloutput">{{attachment.body}}</div>
+		</div>
+	</div>
+
+    <!--i think the v-if tags here have just been left lying around and have no effect on anything?-->
+	<div id="main_pane_default" class="box content is-medium"  v-if="paneVisible == 0">
+		<div id="v_main_pane_default">
+			<h2>Welcome to Miruket</h2>
+			<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>{{main_pane_tooloutput.body}}
+			<p>Select a Client</p>
+			<div v-for="(cl, index) in mpd_clientlist">
+			<span class="ptr" @click="vSelectClient(index)">&raquo; {{cl.t}}</span>
+			</div>
+		</div>
+	</div>
+
+	<div id="main_pane_projects" class="box content is-medium" style="display: none">
+		<div id="v_main_pane_projects">
+			<h2>Projects for {{mpp_clientdetails.name}}</h2>
+			<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>{{main_pane_tooloutput.body}}
+			<p>stuff</p>
+			<div v-for="(pr, index) in mpp_projectslist">
+			<span class="ptr" @click="vSelectProject(index)">&raquo; {{pr.t}}</span>
+			</div>
+		</div>
+	</div>
+  
+  </div><!--column-->
+</div><!--columns_layout-->
+
+<div id="graph_layout"></div>
+
+
+<script>
+// script begin --------------------------------------------------------------------------------------------------------
+
+//Initialize Quill editor
+
+var toolbarOptions = [
+  ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+  ['blockquote', 'code-block'],
+
+  [{ 'header': 1 }, { 'header': 2 }],               // custom button values
+  [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+  [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
+  [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
+  [{ 'direction': 'rtl' }],                         // text direction
+
+  [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
+  [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+
+  [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
+  [{ 'font': [] }],
+  [{ 'align': [] }],
+  ['image'],
+  ['video'],
+  ['clean']                                         // remove formatting button
+];
+
+var quill = new Quill('#editor', {
+  modules: {
+    toolbar: toolbarOptions
+  },
+  theme: 'snow'
+});
+quill.disable();
+
+function toggleQuill()
+{
+	var edbutton = document.getElementById('toggleEditing');
+	if(quill.isEnabled())
+	{
+		quill.disable();
+		edbutton.innerText = "Edit";
+	}
+	else
+	{
+		quill.enable();
+		edbutton.innerText = "Save";
+	}
+}
+
+// data stores ------------------------------------------------------------
+
+var data_tooloutput = { title: "placeholder title", body: "placeholder body"};
+
+var main_index = {};
+var main_clients_list = [];
+var main_projects_list = [];
+var currentClientInfo = { name: "", descr: "", uid: "" };
+var currentProjectInfo = { name: "", descr: "", uid: "" };
+var current_groups_list = [];
+var current_items_list = [];
+var currentSubgroupUid = "";
+
+// show/hide the main panes -------------------------------------------------
+
+var mainPanes = [
+	document.getElementById('main_pane_default'), //0
+	document.getElementById('main_pane_projects'), //1
+	document.getElementById('main_pane_editable'), //2
+	document.getElementById('main_pane_tooloutput') //3
+];
+
+const D_NONE = "none";
+const D_SHOW = "block";
+
+function switchMainPane(paneNum)
+{
+	mainPanes.forEach((item,index) => {item.style.display = (index == paneNum) ? D_SHOW : D_NONE});
+}
+
+// event handlers ------------------------------------------------------------
+
+var testhttpdata = "(empty)";
+async function testHttpRequest1()
+{
+	await fetch('/clients').then(response => response.json()).then(data => { testhttpdata = data });
+	data_tooloutput.title = "GetClients Results";
+	data_tooloutput.body = JSON.stringify(testhttpdata);
+}
+
+async function testHttpRequest2()
+{
+	let d = new Date();
+	let data = { t : d.toString() };
+	await fetch('/project',{
+		method: 'POST',
+		headers: {
+		  'Content-Type': 'application/json'
+		  // 'Content-Type': 'application/x-www-form-urlencoded',
+		},
+		body: JSON.stringify(data) // body data type must match "Content-Type" header
+	});
+}
+
+async function showAttachment(aID)
+{
+	//we would check what the attachment type is,
+	// a) find the appropriate mainPane
+	// b) set the mainPane content to the attachment content
+	// c) switch the div to the selected mainPane
+	
+	// get the attachment metadata for the node
+	let att = main_index[aID];
+	if (att == null)
+		return;
+		
+	// decide whether to display inline or display download link
+	// application/x-miruket-editable -> editable (2)
+	// text formats -> raw tooloutput (3)
+	// image formats ->  image render (*create image pane)
+	// everything else => download link  (*create download pane)
+	// find the appropriate pane to use
+	// render content and switch pane
+
+	data_tooloutput.title = att.t;
+
+	await fetch('/attachment/'+aID)
+		.then(response => response.json())
+		.then(data => { 
+			data_tooloutput.body = data.nodes[0].b;
+			}
+		);
+
+
+	switchMainPane(3); //tooloutput
+	//if(attachmentId == 'test_tool')
+	//	switchMainPane(3); //tooloutput
+	//else if(attachmentId == 'test_edit')
+	//	switchMainPane(2); //editable
+}
+
+// because of the vue reference to the global array, just assigning list = [] is breaking things, so need to do it this way
+function clearList(list)
+{
+	while(list.length > 0)
+		list.pop()
+}
+
+function clearObjectProperties(obj)
+{
+	for (var prop in obj) {
+		if (obj.hasOwnProperty(prop)) {
+			delete obj[prop];
+		}
+	}
+}
+
+function forceVueRefresh(vueKey)
+{
+	vueKey = new Date().toString();
+}
+ 
+function setCurrentNodeInfo(selectedNode,currentInfo)
+{	
+	currentInfo.name = selectedNode.t;
+	currentInfo.descr = selectedNode.d;
+	currentInfo.uid = selectedNode.uid;
+}
+
+function updateClientList(nodeList)
+{
+	clearList(main_clients_list);
+	for(let i=0; i <  nodeList.length; i++)
+	{
+		let dtype = nodeList[i]["dgraph.type"];
+		if(dtype && dtype[0] == TYPE_CLIENT)
+			main_clients_list.push(nodeList[i]);
+	}
+}
+
+function updateProjectsList(projList)
+{
+	clearList(main_projects_list);
+	for(let i=0; i <  projList.length; i++)
+	{
+		let dtype = projList[i]["dgraph.type"];
+		if(dtype && dtype[0] == TYPE_PROJECT)
+			main_projects_list.push(projList[i]);
+	}
+}
+
+function updateNode(existingNode, updatedNode)
+{
+	//for (const [key, value] of Object.entries(existingNode)) console.log("before: "+key+","+value);
+	//what about properties that are gone from updatedNode?
+	for (const [key, value] of Object.entries(updatedNode)) {
+	  existingNode[key] = value;
+	}
+	//for (const [key, value] of Object.entries(existingNode)) console.log("after: "+key+","+value);
+}
+
+function updateProjectTree(nodesAndEdges)
+{
+	// delete nodes
+	// delete edges
+	// upsert nodes
+	let nodes = nodesAndEdges.nodes;
+	for (let i = 0; i < nodes.length; i++)
+	{
+		//  if exists in mainindex then update
+		let node = nodes[i];
+		let tnode = main_index[node.uid];
+		if(tnode)
+			updateNode(tnode, node);
+		else
+		{
+			main_index[node.uid] = node;
+			tnode = node;
+		}
+		if(tnode["dgraph.type"][0] == TYPE_GROUP && 
+			!current_groups_list.find(ele => ele.uid == tnode.uid)) 
+			current_groups_list.push(tnode);
+	}
+
+	// upsert edges
+	let edges = nodesAndEdges.edges;
+	for (let i = 0; i < edges.length; i++)
+	{
+		//  if exists in mainindex then update
+		let edge = edges[i];
+		edge.source = edge.fr;
+		edge.target = edge.to;		
+		//let tedge = main_index[edge.uid];
+		if(!(edge.uid in main_index))
+			main_index[edge.uid] = edge;
+		let srcNode = main_index[edge.source];
+		let tgtNode = main_index[edge.target];
+		if (srcNode == null || tgtNode == null)
+			continue;
+		if(tgtNode["dgraph.type"][0] == TYPE_ITEM && 
+		   srcNode["dgraph.type"][0] == TYPE_SUBGROUP &&
+		   srcNode["uid"] == currentSubgroupUid &&
+		   !current_items_list.find(ele => ele.uid == tgtNode.uid)) 
+		   current_items_list.push(tgtNode);
+		
+		//update src/target in/out sets
+		// var s = new Set();
+		// s.add(item)
+		// s.delete(item)
+		if(srcNode.out == null)
+			srcNode.out = [];
+		let tmpSet = new Set(srcNode.out);
+		tmpSet.add(tgtNode);
+		//clearList(srcNode.out) 
+		//copyIntoList(srcNode.out, Array.from(tmpSet));
+		srcNode.out = Array.from(tmpSet);
+		if(tgtNode.in == null)
+			tgtNode.in = [];
+		tmpSet =  new Set(tgtNode.in);
+		tmpSet.add(srcNode);
+		//clearList(tgtNode.in) 
+		//copyIntoList(tgtNode.in, Array.from(tmpSet));
+		tgtNode.in = Array.from(tmpSet);
+	}
+	//forceVueRefresh(updateKeyForColGrps);
+}
+
+async function showClients()
+{
+	//load clients and show in main pane
+	await fetch('/clients')
+		.then(response => response.json())
+		.then(data => { updateClientList(data.nodes) }
+		);
+	switchMainPane(0);
+}
+
+async function showProjectsForClient(c)
+{
+	//load projects for client and show in main pane projects
+	let selectedClient = main_clients_list[c];
+	await fetch('/projects/'+selectedClient.uid)
+		.then(response => response.json())
+		.then(data => { updateProjectsList(data.nodes) }
+		);
+	setCurrentNodeInfo(selectedClient,currentClientInfo);
+	switchMainPane(1);
+}
+
+async function showProjectTree(p)
+{
+	let selectedProject = main_projects_list[p];
+	if(currentProjectInfo.uid != selectedProject.uid)
+	{
+		setCurrentNodeInfo(selectedProject,currentProjectInfo);
+		await fetch('/projecttree/'+selectedProject.uid)
+			.then(response => response.json())
+			.then(data => { 
+				clearObjectProperties(main_index);
+				clearList(current_groups_list); 
+				updateProjectTree(data);
+				}
+			);
+	}
+}
+
+async function showSubGroupItems(sg)
+{
+	if(sg == currentSubgroupUid)
+		return;
+
+	currentSubgroupUid = sg;
+	let selectedSubGroup = main_index[sg];
+
+	await fetch('/items/'+currentSubgroupUid)
+		.then(response => response.json())
+		.then(data => { 
+			clearList(current_items_list); 
+			updateProjectTree(data);
+			}
+		);
+
+}
+
+// vueJS bindings ------------------------------------------------------------
+
+// each div where we use style display:none (i.e. the main pane containers) 
+//  must have a child-div that vue binds to instead of the one with the style attribute otherwise it doesn't work
+var updateKeyForColGrps = "";
+
+//main_pane_tooloutput
+var vue_mp_tooloutput = new Vue({
+	el: '#v_main_pane_tooloutput',
+	data: {  // globally, can access using vm.$data.foo
+	   attachment: data_tooloutput //or simpler to assign objects from outside the scope
+	},
+	methods : {
+		testclick : function(event) {
+			alert(event.target.innerText);
+		}
+	}
+});
+
+//main_pane_default
+var vue_mp_default = new Vue({
+	el: '#v_main_pane_default',
+	data: {  // globally, can access using vm.$data.foo
+	   mpd_clientlist: main_clients_list //or simpler to assign objects from outside the scope
+	},
+	methods : {
+		testclick : function(event) {
+			alert(event.target.innerText);
+		},
+		vSelectClient : async function(c){ 
+			showProjectsForClient(c);
+		}
+	}
+});
+
+//main_pane_projects
+var vue_mp_projects = new Vue({
+	el: '#v_main_pane_projects',
+	data: {  // globally, can access using vm.$data.foo
+	   mpp_clientdetails: currentClientInfo,
+	   mpp_projectslist: main_projects_list //or simpler to assign objects from outside the scope
+	},
+	methods : {
+		testclick : function(event) {
+			alert(event.target.innerText);
+		},
+		vSelectProject : async function(p){ 
+			showProjectTree(p);
+		}
+	}
+});
+
+
+
+//column_groups
+var vue_col_groups = new Vue({
+	el: '#v_column_groups',
+	data: {  // globally, can access using vm.$data.foo
+	   //main_pane_tooloutput: data_tooloutput, //or simpler to assign objects from outside the scope
+	   //paneVisible : 0,
+	   vUpdateKeyForColGrps: updateKeyForColGrps, 
+	   cg_groupslist: current_groups_list,
+	   styleobj: {
+		  width: "30%",
+		  padding: "12px 20px",
+		  margin: "8px 0",
+		  boxSizing: "border-box"
+		}
+	},
+	methods : {
+		vtestHttpRequest1 : async function() {
+			testHttpRequest1();
+		},
+		testclick : function(event) {
+			alert(event.target.innerText);
+		},
+		vSelectSubGroup :  async function(sg){ 
+			showSubGroupItems(sg);
+		}
+	}
+});
+
+//column_details
+var vue_col_details = new Vue({
+	el: '#v_column_details',
+	data: {  // globally, can access using vm.$data.foo
+	   //main_pane_tooloutput: data_tooloutput, //or simpler to assign objects from outside the scope
+	   //paneVisible : 0,
+	   cd_itemslist: current_items_list,
+	   styleobj: {
+		  width: "30%",
+		  padding: "12px 20px",
+		  margin: "8px 0",
+		  boxSizing: "border-box"
+		}
+	},
+	methods : {
+		vSelectAttachment : async function(a) {
+			showAttachment(a);
+		},
+		vtestHttpRequest1 : async function() {
+			testHttpRequest1();
+		},
+		vtestHttpRequest2 : async function() {
+			testHttpRequest2();
+		},
+		vshowAttachment : function(a){ 
+			showAttachment(a);
+		},
+		showinputvalue : function(event) {
+			event.target.value = "";
+		},
+		testclick : function(event) {
+			alert(event.target.innerText);
+		}
+	}
+});
+
+const TYPE_CLIENT = "Cl";
+const TYPE_PROJECT = "Pr";
+const TYPE_GROUP = "Gr";
+const TYPE_SUBGROUP = "Sg";
+const TYPE_ITEM = "It";
+const TYPE_ATTACHMENT = "At";
+
+//startup, fetch clients
+showClients();
+
+</script>
+
+</div></body></html>

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <RootNamespace>collablio</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dgraph" Version="20.3.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Owin" Version="3.1" />
+  </ItemGroup>
+
+</Project>
