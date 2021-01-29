@@ -304,10 +304,20 @@ var request = new RequestBuilder{ Query = query, CommitNow = true }.withMutation
 // or else perform a new mutation.
 await txn.Mutate(request);
 */
-		private string MakeTempKeyFromString(string s)
+		private string MakeTempKeyFromString(string s, Dictionary<string,string> _tmpkeyToGuidMap)
 		{
-			return $"_:{s}";
+			string safeID = "";
+			if(_tmpkeyToGuidMap.ContainsKey(s))
+				safeID = _tmpkeyToGuidMap[s];
+			else
+			{
+				safeID = Guid.NewGuid().ToString();
+				_tmpkeyToGuidMap[s] = safeID;
+			}
+
+			return $"_:{safeID}";
 		}
+		
 		//create nodes and optionally link to parent or children
 		public async Task<List<string>> UpsertNodesAsync(List<Node> nodeList)//, List<string> parentUids = null, List<string> childUids = null) 
 		{
@@ -332,25 +342,34 @@ await txn.Mutate(request);
 
 			Regex rgx = new Regex(@"^0x[0-9a-f]+$");
 			
+			//guid lookup table
+			Dictionary<string,string> tmpkeyToGuidMap = new Dictionary<string,string>();
+			
 			int count = 0;
 			foreach (Node n in nodeList)
 			{
 				string id = n.UID?.Trim();
 				if("" == (id ?? "")) 
 				{
-					n.UID = MakeTempKeyFromString($"u{count}");
+					n.UID = MakeTempKeyFromString($"u{count}",tmpkeyToGuidMap);
 					count++;
 				}
 				else 
 				{
 					//regex match 0xNN and if not, then prepend _:id
 					//this will allow client to do a node tree upsert
+					//some user supplied tmpkeys are causing parsing errors, so replace all with guids
 					if (!rgx.IsMatch(id.ToLower()))
-						n.UID = MakeTempKeyFromString(id);
+					{
+						n.UID = MakeTempKeyFromString(id,tmpkeyToGuidMap);
+					}
 				}
 			}
 			
-			List<Node> nodesPlusParentEdges = new List<Node>(nodeList);
+			HashSet<string> nodesBeingUpserted = new HashSet<string>();
+			HashSet<string> nodesThatHaveParents = new HashSet<string>();
+			
+			List<Node> nodesPlusEdges = new List<Node>(nodeList);
 			foreach (Node n in nodeList)
 			{
 				if(n.Parents != null && n.Parents.Count > 0)
@@ -358,27 +377,47 @@ await txn.Mutate(request);
 					foreach (var parent in n.Parents)
 					{
 						//the parentUID must be 0xNN or a valid tempkey
-						//if not, we ignore it
 						string id = parent.UID?.Trim();
 						if (!rgx.IsMatch(id.ToLower()))
-							parent.UID = MakeTempKeyFromString(id);
+							parent.UID = MakeTempKeyFromString(id,tmpkeyToGuidMap);
 
-						nodesPlusParentEdges.Add(new Node { UID = parent.UID, Children = new List<NodeWithUidAndChildren> { new NodeWithUidAndChildren { UID = n.UID } } });
+						nodesPlusEdges.Add(new Node { UID = parent.UID, Children = new List<NodeWithUidAndChildren> { new NodeWithUidAndChildren { UID = n.UID } } });
 					}
-					//ensure that the "in" property is null before upserting the node into the DB
-					// because the Parents property is an alias for ~out when the Node is retrieved from the DB
-					//and update the lastModTime
-					n.Parents = null;
-					n.SetLastModTimeToNow();
+					nodesThatHaveParents.Add(n.UID);
 				}
-				else if(n.UID.StartsWith("_:"))//set the parentUID to the ROOTNODE_UID !!except if it *is* the root node!!
+				//child edges will be retained in the node during upsert, so dont need to create them
+				//need to make their tmpkeys safe and record that the children are linkedTo for the later check that parents unlinked nodes to the root node
+				if(n.Children != null && n.Children.Count > 0)
 				{
-					nodesPlusParentEdges.Add(new Node { UID = ROOTNODE_UID, Children = new List<NodeWithUidAndChildren> { new NodeWithUidAndChildren { UID = n.UID } } });
+					foreach (var child in n.Children)
+					{
+						//the parentUID must be 0xNN or a valid tempkey
+						string id = child.UID?.Trim();
+						if (!rgx.IsMatch(id.ToLower()))
+							child.UID = MakeTempKeyFromString(id,tmpkeyToGuidMap);
+
+						nodesThatHaveParents.Add(child.UID);
+					}
 				}
+
+				//ensure that the "in" property is null before upserting the node into the DB
+				// because the Parents property is an alias for ~out when the Node is retrieved from the DB
+				//and update the lastModTime
+				n.Parents = null;
+				n.SetLastModTimeToNow();
+				nodesBeingUpserted.Add(n.UID);
+				
 			}
 
+			// substract the set of nodes that have specified a parent to link to 
+			nodesBeingUpserted.ExceptWith(nodesThatHaveParents);
+			foreach (var n in nodesBeingUpserted)
+				if(n.StartsWith("_:"))//set the parentUID to the ROOTNODE_UID !!except if it *is* the root node (the root node will never start with _:)
+				{
+					nodesPlusEdges.Add(new Node { UID = ROOTNODE_UID, Children = new List<NodeWithUidAndChildren> { new NodeWithUidAndChildren { UID = n } } });
+				}
 			
-			var transactionResult = await DoTransaction(TX_SET, nodesPlusParentEdges, jsonSerialiseIgnoreNull);
+			var transactionResult = await DoTransaction(TX_SET, nodesPlusEdges, jsonSerialiseIgnoreNull);
 			LogService.Log(LOGLEVEL.DEBUG,"DBManager UpsertNodesAsync Result: "+transactionResult.ToString());
 			foreach (var n in nodeList)
 			{

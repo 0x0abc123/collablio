@@ -460,12 +460,17 @@ word-wrap: anywhere;
 				  </div>
 				  <div class="box"  @drop='onDrop($event)' @dragover.prevent @dragenter.prevent>
 					<p class="subtitle">List of Child Items</p>
-					<div v-for="(child, index) in v.config.nodeinfo.outrefs" class="mb-3">
+					<div v-for="(child, index) in v.config.nodeinfo.outrefs" class="mb-1">
 					<!-- TODO: allow cloning of items but need to fetch attachment body if it hasnt been populated yet -->
 					<!-- the same issue does not occur when cloning from the view or edit pane because the body has been loaded -->
 					<!-- maybe add a hasAttachmentBody field to the typeConfig?? -->
-					<span class="button is-info is-small drag" draggable @dragstart="startDrag($event,child.uid)">&#10021; Move</span>
-					<span class="ptr pl-2" @click="viewNode($event,child.uid)"><img v-bind:class="getTypeIcon(child)"> {{child.l}}</span>
+
+					<div class="columns is-vcentered">
+						<div class="column is-1"><span class="button is-info is-small drag" draggable @dragstart="startDrag($event,child.uid)">&#10021; Move</span></div>
+						<div class="column is-3 ptr pl-2" @click="viewNode($event,child.uid)"><img v-bind:class="getTypeIcon(child)"> {{child.l}}</div>
+						<div class="column is-8 ptr pl-5" @click="viewNode($event,child.uid)">{{child.d}}</div>
+					</div>
+
 					</div>
 					<div class="box" v-if="v.config.nodeinfo.out.length > 0 && v.config.nodeinfo.outrefs.length < 1">
 						<a class="button is-info" @click="loadChildren(v.config.nodeinfo.uid)">Show Child Items</a>
@@ -482,7 +487,7 @@ word-wrap: anywhere;
 		<div id="view_textbody" class="box content is-small" style="display: none">
 		<!--////VueBinding////-->
 			<div id="v_view_textbody">
-				<h2>[{{v.config.nodeinfo.d}}] {{v.config.nodeinfo.l}}</h2>
+				<h2>{{v.config.nodeinfo.l}}</h2>
 				  <div class="tooloutput"><div class="mono">{{v.config.nodeinfo.x}}</div></div>
 				
 			</div>
@@ -1253,7 +1258,12 @@ var _panesIndex = {
 		"textbody" : {
 			divID: "view_textbody", //DOMelementID
 			v: { config:  getDefaultConfig('view')},
-			onBeforeShow: function(){}, //get config using this.v.config  (will have nodeinfo and parentID)
+			onBeforeShow: async function(){
+				let nodeInfo = this.v.config.nodeinfo;
+				await updateAttachmentNodeIfChangedOrEmpty(nodeInfo);
+				//without the forceUpdate, the TextData is not showing upon the first viewing attempt, but will show on the second
+				v_view_textbody.$forceUpdate(); 
+			}, 
 		},
 		"editor" : {
 			divID: "view_editor", //DOMelementID
@@ -1997,7 +2007,7 @@ var v_action_funcs = {
 			let conf =  tc.actionViewConf || _typeConfigs.unknown.actionViewConf;
 			_panesIndex.view[conf.paneType].v.config = conf.config;
 			_panesIndex.view[conf.paneType].v.config.nodeinfo = _index[uid];
-			_panesIndex.view[conf.paneType].onBeforeShow();
+			await _panesIndex.view[conf.paneType].onBeforeShow();
 			switchPane('view',conf.paneType);
 			n.isViewed = true;
 			v_currently_selected_node.node = n;
@@ -2014,7 +2024,7 @@ var v_action_funcs = {
 			let newN = emptyNode('',typenameOfNew);
 			newN[PROP_PARENTLIST].push({uid: _uid});
 			_panesIndex.add[conf.paneType].v.config.nodeinfo = newN;
-			_panesIndex.add[conf.paneType].onBeforeShow();
+			await _panesIndex.add[conf.paneType].onBeforeShow();
 			switchPane('add',conf.paneType);
 		}
 	},
@@ -2038,7 +2048,7 @@ var v_action_funcs = {
 			tmpNodeCopy.hasChanged = n.hasChanged;
 			_panesIndex.edit[conf.paneType].v.config.nodeinfo = tmpNodeCopy;
 			
-			_panesIndex.edit[conf.paneType].onBeforeShow();
+			await _panesIndex.edit[conf.paneType].onBeforeShow();
 			switchPane('edit',conf.paneType);
 			n.isViewed = true;
 		}
