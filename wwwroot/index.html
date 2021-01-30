@@ -197,6 +197,14 @@ content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width
   vertical-align: middle;
 }
 
+
+.ico-send {
+content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='blue' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='feather feather-send'%3E%3Cline x1='22' y1='2' x2='11' y2='13'%3E%3C/line%3E%3Cpolygon points='22 2 15 22 11 13 2 9 22 2'%3E%3C/polygon%3E%3C/svg%3E");
+  width: 1em;  
+  height: 1em; 
+  vertical-align: middle;
+}
+
 /***Fixed Size Icons that display according to the specified size***/
 
 .ico-load {
@@ -1192,7 +1200,7 @@ const TYPE_ANNOTATION = "Annotation";
 const TYPE_TAG = "Tag";
 const TYPE_REPORT = "Report";
 const TYPE_SECTION = "Section";
-//const TYPE_FINDING = "Finding";
+const TYPE_JOBREQ = "Job Request";
 
 createTypeConfigWithDefaults(TYPE_CLIENT, [TYPE_FOLDER, TYPE_PROJECT, TYPE_NOTE, TYPE_TABLE, TYPE_ANNOTATION, TYPE_FILE],'ico-user');
 createTypeConfigWithDefaults(TYPE_PROJECT, [TYPE_FOLDER, TYPE_REPORT, TYPE_NOTE, TYPE_TABLE, TYPE_TEXT, TYPE_IMAGE, TYPE_ANNOTATION, TYPE_FILE],'ico-book',false);
@@ -1211,9 +1219,10 @@ createTypeConfigWithDefaults(TYPE_NOTE, [TYPE_ANNOTATION],'ico-note',false,'edit
 createTypeConfigWithDefaults(TYPE_TABLE, [TYPE_ANNOTATION],'ico-table',false,'table','table','table');
 createTypeConfigWithDefaults(TYPE_ANNOTATION, [],'ico-info',false,null,null,'default');
 createTypeConfigWithDefaults(TYPE_TAG, [TYPE_FOLDER, TYPE_CLIENT, TYPE_PROJECT, TYPE_NOTE, TYPE_TABLE, TYPE_TEXT, TYPE_ANNOTATION, TYPE_FILE, TYPE_IMAGE, TYPE_TAG, TYPE_HOST, TYPE_PORT, TYPE_REPORT],'ico-tag',false);
-createTypeConfigWithDefaults(TYPE_REPORT, [TYPE_SECTION],'ico-report',false);
+createTypeConfigWithDefaults(TYPE_REPORT, [TYPE_SECTION, TYPE_JOBREQ],'ico-report',false);
 createTypeConfigWithDefaults(TYPE_SECTION, [TYPE_SECTION, TYPE_NOTE, TYPE_TABLE, TYPE_ANNOTATION, TYPE_FILE, TYPE_TEXT, TYPE_IMAGE],'ico-mark',false);
 //createTypeConfigWithDefaults(TYPE_FINDING, [TYPE_FOLDER, TYPE_NOTE, TYPE_TABLE, TYPE_ANNOTATION, TYPE_FILE, TYPE_TEXT, TYPE_IMAGE],false);
+createTypeConfigWithDefaults(TYPE_JOBREQ, [],'ico-send',false,'default','default','default');
 
 
 //write a loop that iterates thru all typeConfigs and checks whether its members contain config.nodeinfo

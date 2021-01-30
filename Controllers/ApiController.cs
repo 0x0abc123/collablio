@@ -61,10 +61,11 @@ namespace collablio.Controllers
 
 		[HttpGet]
         [Route("nodes")]
-        public async Task<IActionResult> QueryNodesGet(string uid = null, string field=null, string op=null, string val=null, int depth = 0, string type = null)
+        public async Task<IActionResult> QueryNodesGet(string uid = null, string field=null, string op=null, string val=null, int depth = 0, string type = null, bool body = false)
         {
+			//TODO: when ACLs are implemented, restrict body=true to automation accounts, not all users
 			List<string> uids = (uid != null) ? new List<string> {uid} : null;
-			return Ok(await _QueryNodesAsync(uids, field, op, val, depth, type));
+			return Ok(await _QueryNodesAsync(uids, field, op, val, depth, type, body));
         }
 
 		[HttpGet]
