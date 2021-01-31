@@ -24,6 +24,7 @@ import traceback
 
 import io
 import mimetypes
+import base64
 
 ######################################################
 '''
@@ -81,21 +82,17 @@ DAEMON_LISTENER_MODE = False
 
 def parseArgs():
     global DAEMON_LISTENER_MODE
+    data = {}
     try:
-        data = {}
         num_args = len(sys.argv)
         data['projectname'] = sys.argv[1]
         data['reportname'] = sys.argv[2]
-
-        DAEMON_LISTENER_MODE = not (data['projectname'] and data['reportname'])
-            #start in autogenerator listen mode
-
-
-        return data
     except:
         print(C_USAGE.format(sys.argv[0]))
-        exit(0)
 
+    #start in autogenerator listen mode
+    DAEMON_LISTENER_MODE = not (('projectname' in data) and ('reportname' in data))
+    return data
 
 #del foo.bar
 class Node:
@@ -336,31 +333,40 @@ def convertQuillOpsToDOCX(quilljsondata, doc, curdepth, otherAttachments = None)
                 #print('Apply forward attribute'+str(attrs))
                 fwdAttrs =  attrs
 
-        startFromStrPos = 0
-        while True:
-            indexOfNextNewline = op['insert'].find('\n',startFromStrPos)
-            if indexOfNextNewline < 0:
-                #print('no more newlines found')
-                Lines.append({ 'content': op['insert'][startFromStrPos:], 'formatting' : fwdAttrs })
-                break
-            #print('newline found at: '+str(indexOfNextNewline))
-            Lines.append({ 'content': op['insert'][startFromStrPos:indexOfNextNewline+1], 'formatting' : fwdAttrs })
-            startFromStrPos = indexOfNextNewline+1
-            if startFromStrPos >= len(op['insert']):
-                break
+        #handle images
+        if isinstance(op['insert'], dict):
+            insertData = op['insert']
+            if 'image' in insertData:
+                #print('-------found image: '+insertData['image'])
+                Lines.append({ 'image': insertData['image'], 'content': '', 'formatting' : {} })
+                
+        elif isinstance(op['insert'], str):
+            startFromStrPos = 0
+            while True:
+                indexOfNextNewline = op['insert'].find('\n',startFromStrPos)
+                if indexOfNextNewline < 0:
+                    #print('no more newlines found')
+                    Lines.append({ 'content': op['insert'][startFromStrPos:], 'formatting' : fwdAttrs })
+                    break
+                #print('newline found at: '+str(indexOfNextNewline))
+                Lines.append({ 'content': op['insert'][startFromStrPos:indexOfNextNewline+1], 'formatting' : fwdAttrs })
+                startFromStrPos = indexOfNextNewline+1
+                if startFromStrPos >= len(op['insert']):
+                    break
 
     cleanedLines = [Lines[0]]
     for iL in range(0, len(Lines)):
         line = Lines[iL]
         #print(line)
         #merge lines that are just {line:'\n','formatting':None} with previous line if previous line isn't a sole newline 
-        lineBefore = Lines[iL-1]['content']
-        if line['content'] == '\n' and not line['formatting'] and lineBefore != '\n':
-            cleanedLines[-1]['content'] += '\n'
-            #print('dropping empty line')
-            continue
-        else:
-            cleanedLines.append(line)
+        if 'content' in line and 'content' in Lines[iL-1]:
+            lineBefore = Lines[iL-1]['content']
+            if line['content'] == '\n' and not line['formatting'] and lineBefore != '\n':
+                cleanedLines[-1]['content'] += '\n'
+                #print('dropping empty line')
+                continue
+            
+        cleanedLines.append(line)
             
     for line2 in cleanedLines:
         print(str(line2['formatting'])+' '+line2['content'])
@@ -378,13 +384,14 @@ def convertQuillOpsToDOCX(quilljsondata, doc, curdepth, otherAttachments = None)
         finishedParagraph = False
 
         while not finishedParagraph:
-
-            curLine = cleanedLines[curLineIndex]['content']
-            curLineStyle = cleanedLines[curLineIndex]['formatting']
+            
+            curLine = cleanedLines[curLineIndex]
+            curLineContent = curLine['content']
+            curLineStyle = curLine['formatting']
 
             prevStyleIsItsOwnParagraph = isStyleWithItsOwnParagraph(prevLineStyle)
 
-            #print('*'*10+'\nprevStyle='+str(prevLineStyle)+' , curStyle='+str(curLineStyle)+', curLine=[['+curLine+']]')
+            #print('*'*10+'\nprevStyle='+str(prevLineStyle)+' , curStyle='+str(curLineStyle)+', curLineContent=[['+curLineContent+']]')
 
             # the approach is to aggregate lines of the same style into the one paragraph
             # create a new paragraph once the style changes
@@ -395,7 +402,7 @@ def convertQuillOpsToDOCX(quilljsondata, doc, curdepth, otherAttachments = None)
                 if runEndsWithNewline:
                     runStr = runStr.strip('\n') #runStr[:-1] #get rid of trailing newline because space is automatically added between paragraphs
                 run = p.add_run(runStr)
-                
+                                        
                 if prevLineStyle:
                     applyStylesToRun(prevLineStyle, run)
                     
@@ -405,13 +412,69 @@ def convertQuillOpsToDOCX(quilljsondata, doc, curdepth, otherAttachments = None)
                 finishedParagraph = (runEndsWithNewline or prevStyleIsItsOwnParagraph or (curLineIndex >= len(cleanedLines) - 1))
                 if finishedParagraph:
                     applyStylesToParagraph(prevLineStyle, p, doc, curdepth)
-                runStr = curLine #commence a new run string, assigning the current line
+
+                if 'image' in curLine:
+                    try:
+                        #{"insert":{"image":"data:image/png;base64,iVBORw0KGgoAAAANSUhEU...    
+                        imgrun = doc.add_paragraph().add_run().add_picture(io.BytesIO(base64.b64decode(curLine['image'].split(',')[1])))
+                    except:
+                        print('an error occurred while decoding the base64 image')
+
+                runStr = curLineContent #commence a new run string, assigning the current line
             else:
-                runStr += curLine #append this line to the current run string
+                runStr += curLineContent #append this line to the current run string
 
             prevLineStyle = curLineStyle
             curLineIndex += 1
 
+
+
+CMS = 360000
+
+def convertJexcelJsonToDOCX(jexcelJsonString, doc, curdepth, otherAttachments = None):
+    print(jexcelJsonString)
+    '''
+    t  = doc1.add_table(2,2)
+    t.columns[0].width = int(1.5*INCHES)
+    t.columns[1].width = int(5.25*INCHES)
+    #t.cell(TR_RISK,TC_LABEL).text = LABEL_RISK
+    #t.cell(TR_RISK,TC_VALUE).paragraphs[0].add_run().add_picture(RISK_IMAGES[findingData[FIELD_RISK]])
+    
+    '''
+    try:
+        jsonObj = json.loads(jexcelJsonString)
+        #jsonObj { jsondata: '<serialisedJsonArray>', jsoncols: '<serialisedJsonArray>'}
+        jsonRows = json.loads(jsonObj['jsondata'])
+        jsonCols = json.loads(jsonObj['jsoncols']) if 'jsoncols' in jsonObj else []
+        
+        if len(jsonRows) < 1:
+            return
+        
+        numOfColsInTable = len(jsonCols)
+        numOfRowsInTable = len(jsonRows)+1 #need to add the header row
+        
+        tbl = doc.add_table(numOfRowsInTable, numOfColsInTable) #TODO: table style is 3rd argument
+        
+        colWidths = []
+        for i,colData in enumerate(jsonCols):
+            colWidths.append(int(colData['width']))
+            curCell = tbl.cell(0,i)
+            curCell.text = colData['title']
+            #curCell.paragraphs[0].runs[0].style.bold = True
+
+        totalTableWidth = 15.0*CMS
+        totalColWidthUnits = float(sum(colWidths))
+        for i,col in enumerate(tbl.columns):
+            col.width = int((colWidths[i]/totalColWidthUnits)*totalTableWidth)
+        
+        for i,rowData in enumerate(jsonRows):
+            for j in range(0,numOfColsInTable):
+                curCell = tbl.cell(i+1,j)
+                curCell.text = rowData[j]
+        
+    except Exception as e:
+        print('an exception occurred while parsing table json: '+str(e))
+        traceback.print_exc()
 
 def addAPageBreak(doc):
     doc.add_paragraph('').add_run('').add_break(WD_BREAK.PAGE)
@@ -436,7 +499,7 @@ def generate(docx, reportTreeNode, depth):
     except:
         print('error when attempting to retrieve label for section '+reportTreeNode[PROP_UID])
 
-    #putting "[N]" in the label is currently a dodgy hack to order the sections/notes, so remove it
+    #putting "[N]" in the label is currently a dodgy hack to order the sections/notes, so remove the prefix from the label
     match = re.search('^\\[[a-z0-9]+\\][\\s]+', heading)
     if(match):
         heading = heading[len(match.group(0)):]
@@ -449,7 +512,10 @@ def generate(docx, reportTreeNode, depth):
     #render table first??
     # or just require {{reference}} to tables and leave it up to user?
     if PROP_TEXTDATA in reportTreeNode:
-        convertQuillOpsToDOCX(reportTreeNode[PROP_TEXTDATA], docx, depth)
+        if reportTreeNode[PROP_TYPE] == TYPE_NOTE:
+            convertQuillOpsToDOCX(reportTreeNode[PROP_TEXTDATA], docx, depth)
+        elif reportTreeNode[PROP_TYPE] == TYPE_TABLE:
+            convertJexcelJsonToDOCX(reportTreeNode[PROP_TEXTDATA], docx, depth)
         addAPageBreak(docx)
 
     if PROP_CHILDLIST in reportTreeNode:
@@ -651,7 +717,7 @@ def generateReportForReportNode(reportRootNode):
         for section in reportRootNode[PROP_CHILDLIST]:
             generate(newdoc, getNodeForUID(section[PROP_UID]), sectionDepth)
         
-        reportSaveName = 'report-'+str(uuid.uuid4()).replace('-','')[:14]+'.docx'
+        reportSaveName = 'report-'+str(int(time.time()))+str(uuid.uuid4()).replace('-','')[:4]+'.docx'
         newdoc.save(reportSaveName)
         print(reportSaveName)
         return reportSaveName
@@ -718,11 +784,14 @@ if not DAEMON_LISTENER_MODE:
 
 
 
+print('No project or filename arguments were provided. Running in Daemon Listener Mode')
 
 #query to find all new reports since last check
 # todo: save the last check time in persistent storage to avoid fetching every single report upon the process running
 
 lastFetchTime = 0
+
+uidsOfReports = set()
 
 while True:
     querystring = '?uid=&field={}&op={}&val={}&depth={}&type={}'.format(\
@@ -748,15 +817,17 @@ while True:
 
         clearNodeIndex()
         
-        uidsOfReports = []
+        #uidsOfReports = []
         for nodeResult in jsonResponse['nodes']:
             if nodeResult[PROP_TYPE] == TYPE_REPORT:
-                uidsOfReports.append(nodeResult[PROP_UID])
+                #uidsOfReports.append(nodeResult[PROP_UID])
+                uidsOfReports.add(nodeResult[PROP_UID])
                 storeNode(nodeResult)
 
         # now query the database for report generation jobrequests pending for any of those report nodes 
-        jsonResponse = fetchNodesPost(uids = uidsOfReports, typ = TYPE_JOBREQ)
-
+        #jsonResponse = fetchNodesPost(uids = uidsOfReports, typ = TYPE_JOBREQ)
+        jsonResponse = fetchNodesPost(uids = list(uidsOfReports), typ = TYPE_JOBREQ, depth = 1)
+        
         for nodeResult in jsonResponse['nodes']:
             print(str(nodeResult))
             if (PROP_PARENTLIST in nodeResult) and (len(nodeResult[PROP_PARENTLIST]) > 0):
