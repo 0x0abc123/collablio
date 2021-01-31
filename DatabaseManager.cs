@@ -150,7 +150,10 @@ namespace collablio
 			string val = null, 
 			int recurseDepth = 0,  //in dgraph recurse level 0 means unlimited but here we interpret it as no recurse
 			string nodeType = null,
-			bool includeBody = false
+			bool includeBody = false,
+//-----
+			bool upwardsRecurse = false
+//-----
 			)
 		{
 			
@@ -220,7 +223,7 @@ namespace collablio
 					var(func: uid($ids)) @recurse(depth: $rdepth) 
 					{
 					  NID as uid
-					  out
+					  __DIRECTION__
 					}
 				  
 					qr(func: uid(NID))";
@@ -236,6 +239,9 @@ namespace collablio
 				}";
 
 			query = query.Replace("__B64__",(includeBody ? "b x" : ""))
+//-----
+					.Replace("__DIRECTION__",(upwardsRecurse ? "~out" : "out"))
+//-----
 					.Replace("__OP__",op)
 					.Replace("__FIELD__",field)
 					.Replace("__TYPE1__",type1)

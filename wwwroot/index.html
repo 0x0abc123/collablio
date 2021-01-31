@@ -205,6 +205,38 @@ content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width
   vertical-align: middle;
 }
 
+
+.ico-left-arr {
+content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='feather feather-arrow-left-circle'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpolyline points='12 8 8 12 12 16'%3E%3C/polyline%3E%3Cline x1='16' y1='12' x2='8' y2='12'%3E%3C/line%3E%3C/svg%3E");
+  width: 1em;  
+  height: 1em; 
+  vertical-align: middle;
+}
+
+.ico-right-arr {
+content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='feather feather-arrow-right-circle'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpolyline points='12 16 16 12 12 8'%3E%3C/polyline%3E%3Cline x1='8' y1='12' x2='16' y2='12'%3E%3C/line%3E%3C/svg%3E");
+  width: 1em;  
+  height: 1em; 
+  vertical-align: middle;
+}
+
+.ico-left-arr-dis {
+content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='LightGrey' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='feather feather-arrow-left-circle'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpolyline points='12 8 8 12 12 16'%3E%3C/polyline%3E%3Cline x1='16' y1='12' x2='8' y2='12'%3E%3C/line%3E%3C/svg%3E");
+  width: 1em;  
+  height: 1em; 
+  vertical-align: middle;
+}
+
+.ico-right-arr-dis {
+content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='LightGrey' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='feather feather-arrow-right-circle'%3E%3Ccircle cx='12' cy='12' r='10'%3E%3C/circle%3E%3Cpolyline points='12 16 16 12 12 8'%3E%3C/polyline%3E%3Cline x1='8' y1='12' x2='16' y2='12'%3E%3C/line%3E%3C/svg%3E");
+  width: 1em;  
+  height: 1em; 
+  vertical-align: middle;
+}
+
+
+
+
 /***Fixed Size Icons that display according to the specified size***/
 
 .ico-load {
@@ -404,13 +436,13 @@ word-wrap: anywhere;
         <strong>collablio</strong>
       </p>
     </div>
-    <div class="level-item">
+    <div id="v_topsearch" class="level-item">
       <div class="field has-addons">
         <p class="control">
-          <input class="input is-small" type="text" style="width: 30vw;" placeholder="Query the Data" disabled>
+          <input class="input is-small" type="text" style="width: 30vw;" v-model="query" :placeholder="'Search within '+v.node.l">
         </p>
         <p class="control">
-          <button class="button is-small" disabled>
+          <button class="button is-small" @click="vDoSearch()">
             Search
           </button>
         </p>
@@ -421,8 +453,10 @@ word-wrap: anywhere;
   <!-- Right side -->
   <div id="v_topnav" class="level-right">
     <p class="level-item"><strong>{{v.node.l}}</strong></p>
-    <p class="level-item"  onclick=""><a class="button is-small">Test Modal</a></p>
-    <p class="level-item pr-4" onClick=""><a class="button is-small">Projects</a></p>
+    <p class="level-item is-size-3 ptr" @click="vNavBack()"><img style="stroke: blue;" v-bind:class="iconBack"></p>
+    <p class="level-item is-size-3 ptr" @click="vNavFwd()"><img v-bind:class="iconFwd"></p>
+
+    <p class="level-item"  @click="vSync()"><a class="button is-small">Sync</a></p>
     <p class="level-item"><a @click="" class="button is-success is-small">Tasks</a></p>
   </div>
 
@@ -452,6 +486,35 @@ word-wrap: anywhere;
 
     <div id="right_pane" class="pl-3 pr-3">
 	 
+
+		<div id="othermain_search" class="box content" style="display: none">
+		<!--////VueBinding////-->
+			<div id="v_othermain_search">
+				<h2>Search Results</h2>
+				<div class="mpprojects">
+				  
+				  <div class="box">
+					<div class="box">
+						<p>{{v.config.results.nodes.length}} Results were located under {{v.config.results.nodelabel}} for "{{v.config.results.query}}"</p>
+					</div>
+					<div v-for="(result, index) in v.config.results.nodes" class="mb-1">
+					<!-- TODO: allow cloning of items but need to fetch attachment body if it hasnt been populated yet -->
+					<!-- the same issue does not occur when cloning from the view or edit pane because the body has been loaded -->
+					<!-- maybe add a hasAttachmentBody field to the typeConfig?? -->
+
+						<div class="columns is-vcentered">
+							<div class="column is-4 ptr pl-2" @click="viewNode($event,result.uid)"><img v-bind:class="getTypeIcon(result)"> {{result.l}}</div>
+							<div class="column is-8 ptr pl-5" @click="viewNode($event,result.uid)">{{result.d}}</div>
+						</div>
+
+					</div>
+
+				  </div>
+
+				</div>
+			</div>
+		</div>
+
 	 
 		<div id="view_default" class="box content" style="display: none">
 		<!--////VueBinding////-->
@@ -1080,6 +1143,19 @@ var _defaultPaneConfigs = {
 			};
 		},
 	},
+	othermain: {
+		//key : function to return config obj
+		"search" : function() {
+			return {
+				title: '',
+				results: { 
+					nodes: [emptyNode('0x0',TYPE_ROOT)],
+					nodelabel: '<blank>',
+					query: '<blank>',
+				}
+			};
+		},
+	},
 	//modal is the target for these:
 	add: {
 		//key : DOMelementID
@@ -1299,6 +1375,14 @@ var _panesIndex = {
 		},
 
 	},
+	othermain: {
+		//pane key 
+		"search" : {
+			divID: "othermain_search", //DOMelementID
+			v: { config: _defaultPaneConfigs['othermain']['search']()},
+			onBeforeShow: function(){}, //get config using this.v.config  (will have nodeinfo and parentID)
+		},
+	},
 	// for edit panetypes:
 	// onBeforeCopyNode() paneConfig.nodeinfo contains the original node, to allow actions on it to occur
 	// onBeforeShow()  paneConfig.nodeinfo contains a copy of the node, run before pane is shown
@@ -1403,8 +1487,87 @@ var _panesIndex = {
 	}
 };
 
+const HISTORY_VIEWNODE = 'node';
+const HISTORY_SEARCH = 'search';
+
+var MainPaneHistory = [];
+// [ {'type':'viewNode','data':'0x123'}, {'type':'viewSearch', 'data': 's1'}... ]
+var HistoryPosition = -1;
+
+function historyPush(type, data) {
+	if (HistoryPosition > -1)
+		MainPaneHistory = MainPaneHistory.slice(0,HistoryPosition+1);
+	MainPaneHistory.push({'type':type, 'data': data});
+	HistoryPosition++;
+	setNavIcons();
+}
+
+//historyPush('start',null);
+
+function setNavIcons() {
+	vue_topnav.$data.iconBack = (HistoryPosition > 0) ? 'ico-left-arr' : 'ico-left-arr-dis'
+	vue_topnav.$data.iconFwd = (HistoryPosition < MainPaneHistory.length - 1) ? 'ico-right-arr' : 'ico-right-arr-dis'
+}
+
+function historyBack() {
+	if (HistoryPosition > 0) {
+		HistoryPosition--;
+	}
+	setNavIcons();
+	return MainPaneHistory[HistoryPosition];
+}
+
+function historyForward() {
+	if(HistoryPosition < MainPaneHistory.length - 1) {
+		HistoryPosition++;
+	}
+	setNavIcons();
+	return MainPaneHistory[HistoryPosition];
+}
+
+function navigateMainPaneBack() {
+console.log('navigateMainPaneBack');
+	let prevView = historyBack();
+	if (!prevView)
+		return;
+	let prevAction = prevView['type'] == HISTORY_VIEWNODE ? 'view' : 'search';
+	v_action_funcs[prevAction](prevView['data']);
+}
+
+function navigateMainPaneForward() {
+console.log('navigateMainPaneForward');
+	let nextView = historyForward();
+	if (!nextView)
+		return;
+	let nextAction = nextView['type'] == HISTORY_VIEWNODE ? 'view' : 'search';
+	v_action_funcs[nextAction](nextView['data']);
+}
+
+function hasNextHistory() {
+	return (HistoryPosition < MainPaneHistory.length - 2)
+}
+
+function hasPrevHistory() {
+	return (HistoryPosition > 0)
+}
 
 
+SearchCache = {};
+
+async function getSearch(_query, searchRootNode, cached = true) {
+	let searchRootUid = searchRootNode[PROP_UID];
+	let queryKey = `(${searchRootUid}) ${_query}`
+	if(cached && SearchCache[queryKey])
+		return SearchCache[queryKey];
+	let serverResponse = await fetchNodes([searchRootUid], PROP_LABEL , 'allofterms', _query, 20);
+	let queryObj = { nodes: serverResponse['nodes'] || [], nodelabel: searchRootNode[PROP_LABEL], query: _query };
+	SearchCache[queryKey] = queryObj;
+	return queryObj;
+	//let test = emptyNode('0x0',TYPE_ANNOTATION)
+	//test[PROP_LABEL] = 'Test Result';
+	//test[PROP_DETAIL] = query;
+	//return [test];
+}
 
 // show/hide the main panes -------------------------------------------------
 
@@ -1426,6 +1589,7 @@ var modalPaneDivLookup = {};
 
 getPaneDivs(_panesIndex.view,mainPaneDivLookup);
 getPaneDivs(_panesIndex.edit,mainPaneDivLookup);
+getPaneDivs(_panesIndex.othermain,mainPaneDivLookup);
 getPaneDivs(_panesIndex.add,modalPaneDivLookup);
 getPaneDivs(_panesIndex.moveparent,modalPaneDivLookup);
 getPaneDivs(_panesIndex.movechildren,modalPaneDivLookup);
@@ -1436,7 +1600,7 @@ function switchPane(paneType, paneName)
 	let _divID = _panesIndex[paneType][paneName].divID;
 	
 	//main_pane divs
-	if(paneType == 'view' || paneType == 'edit')
+	if(paneType == 'view' || paneType == 'edit' || paneType == 'othermain')
 	{
 		for (const [key, value] of Object.entries(mainPaneDivLookup))
 			value.style.display = (key == _divID) ? D_SHOW : D_HIDE;
@@ -1692,13 +1856,26 @@ function getUidsFromIndex()
 	return listOfUids;
 }
 
+function refsAndListContainSameUids(refs, list)
+{
+	if (refs.length != list.length)
+		return false;
+	let refsSet = new Set(refs);
+	for (let i=0; i < list.length; i++)
+		if(!refsSet.has(list[i][PROP_UID]))
+			return false;
+	return true;
+}
+
 async function fetchChildNodes(nodeid)
 {
-	//check if nodeid has outrefs, if it doesn't then:
 	let node = _index[nodeid];
-	if( node && (node[PROP_CHILDLIST].length) && (node[PROP_CHILDREFS].length < 1))
+	if( node 
+		&& (node[PROP_CHILDLIST].length) 
+		&& !refsAndListContainSameUids(node[PROP_CHILDLIST], node[PROP_CHILDREFS]))
 		await fetchNodes([nodeid],PROP_LASTMOD,'gt',0,1);
 }
+
 
 async function refreshNodes()
 {
@@ -1731,6 +1908,7 @@ async function fetchNodes(_uids, _field = PROP_LASTMOD, _op = 'gt', _val = _last
 //  { field=m op='gt' val=_lastUpdateTime_Server depth=0
 //   uids = [] }
 	let data = { field: _field, op: _op, val: `${_val}`, depth: _depth, uids: _uids };
+	let serverResp = {};
 	showLoading(true);
 console.log('A'+JSON.stringify(data));
 	await fetch('/nodes', {
@@ -1743,6 +1921,7 @@ console.log('A'+JSON.stringify(data));
 	}).then(response => response.json() )
 	.then(rdata => { 
 		console.log(JSON.stringify(rdata));
+		serverResp = rdata;
 		if(rdata && rdata.nodes && !rdata.error)
 		{
 			updateNodeTree(rdata);
@@ -1753,6 +1932,7 @@ console.log('A'+JSON.stringify(data));
 		}
 	});//.catch(console.log("update nodes failed: caught exception."));
 	showLoading(false);	
+	return serverResp;
 }
 
 function createEdgesFromUids(listUidObjs)
@@ -1917,6 +2097,7 @@ Vue.component("tree-item", {
 		},
 		viewNode: function(e, id) {
 			console.log(e,id);
+			historyPush(HISTORY_VIEWNODE,id);
 			v_action_funcs['view'](id);
 		},
 		toggle: function(id) {
@@ -2060,7 +2241,14 @@ var v_action_funcs = {
 			await _panesIndex.edit[conf.paneType].onBeforeShow();
 			switchPane('edit',conf.paneType);
 			n.isViewed = true;
+			historyPush(HISTORY_VIEWNODE,n[PROP_UID]);
+			v_currently_selected_node.node = n;
 		}
+	},
+	search: async function(queryData, cached = true) { 
+		queryresults = await getSearch(queryData.query, queryData.node, cached);
+		_panesIndex.othermain.search.v.config.results = queryresults;
+		switchPane('othermain','search');
 	},
 	copy: async function (srcUID, targetUID) { 
 
@@ -2180,6 +2368,28 @@ function handleSubmit(ac, pane) {
 }
 
 
+var v_othermain_search = new Vue({
+	el: '#v_othermain_search',
+	data: { 
+	   v: _panesIndex['othermain']['search'].v
+	},
+	computed: {
+	},
+	methods : {
+        getTypeIcon: function (node) {
+			let type = node[PROP_TYPE] || 'unknown';
+			let tConf = _typeConfigs[type];
+			return (tConf) ? tConf.iconClassName : 'ico-miscfile';
+        }, 
+		viewNode: function(e, id) {
+			//view node
+			console.log(e,id);
+			historyPush(HISTORY_VIEWNODE,id);
+			v_action_funcs['view'](id);
+		},
+	}
+});
+
 
 var v_view_default = new Vue({
 	el: '#v_view_default',
@@ -2201,6 +2411,7 @@ var v_view_default = new Vue({
 		viewNode: function(e, id) {
 			//view node
 			console.log(e,id);
+			historyPush(HISTORY_VIEWNODE,id);
 			v_action_funcs['view'](id);
 		},
 		startDrag: function(evt,id) {
@@ -2376,11 +2587,37 @@ var vue_topnav = new Vue({
 	el: '#v_topnav',
 	data: { 
 	   v: v_currently_selected_node,
+	   iconBack: 'ico-left-arr-dis',
+	   iconFwd: 'ico-right-arr-dis',
 	},
 	methods: {
-		vShowTasks: function() {
-			//showTasks();
-		}
+		vSync: async function() {
+			await fetchNodes();//showTasks();
+		},
+		vNavBack: function() {
+			navigateMainPaneBack();
+			console.log('vNavBack');
+		},
+		vNavFwd: function() {
+			navigateMainPaneForward();
+			console.log('vNavFwd');
+		},		
+	}
+});
+
+var vue_topsearch = new Vue({
+	el: '#v_topsearch',
+	data: { 
+	   v: v_currently_selected_node,
+	   query: '',
+	},
+	methods: {
+		vDoSearch: async function() {
+			let queryObj = {query: this.query, node: this.v.node};
+			await v_action_funcs['search'](queryObj, false);
+			historyPush(HISTORY_SEARCH, queryObj);
+		},
+		
 	}
 });
 
