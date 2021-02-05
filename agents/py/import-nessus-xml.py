@@ -10,9 +10,10 @@ import urllib.request
 import urllib.parse
 import json
 import traceback
+import html
 
-C_USAGE = '''Usage: {0} <project-label> <nmap-xml-output-file>
-        import an Nmap XML format file
+C_USAGE = '''Usage: {0} <project-label> <nessus-xml-output-file>
+        import a Nessus XML format (.nessus) file
 '''
 
 PROP_UID = "uid"
@@ -54,8 +55,8 @@ def parseArgs():
         if not data['projectname']:
             raise Exception()
 
-        if not data['filename'].split('.')[-1].lower() in ['xml']:
-            print("XML file required, got {}".format(data['filename']))
+        if not data['filename'].split('.')[-1].lower() in ['nessus']:
+            print("nessus XML file required, got {}".format(data['filename']))
             raise Exception()
 
         return data
@@ -89,7 +90,7 @@ class Node:
         apiFormatNode[PROP_CHILDLIST] = [{PROP_UID : child.UID} for child in self.Children]
         return apiFormatNode
         
-#instead of NodeWithChildren classes, use a dict with an array of children:
+#instead of NodeWithChildren classes (as used in the .NET version), use a dict with an array of children:
 # [{'host':hostNode, 'ports':[portNodes]},...]
 # [{'port':portNode, 'textitems':[textNodes]},...]
 
@@ -100,108 +101,118 @@ etree = ETree.parse(argdata['filename'])
 root = etree.getroot()
 
 #print("Root tag: {}".format(root.tag))
-
+IgnoredPluginIDs = ['10180','10287','10919','11219','12053','19506','22964','25220','31422','39470','45590','50350','54615','132634']
 allHosts = []
 
-for host in root.findall('host'):
+reportElement = root.find('Report')
+if not reportElement:
+    print('The file does not appear to contain any report information')
+    exit(0)
+
+for host in reportElement.findall('ReportHost'):
+
+    hname = host.attrib['name'].lower()
 
     print("Host: {}".format(host.attrib))
-    if not host.find('status').attrib['state'] == 'up':
-        print('host is down')
-        continue
+    #if not host.find('status').attrib['state'] == 'up':
+    #    print('host is down')
+    #    continue
 
     hostNode = Node(TYPE_HOST)
     allHosts.append(hostNode)
+
+    annotationNodeHname = Node(TYPE_ANNOTATION)
+    hostNode.Children.append(annotationNodeHname)
+    annotationNodeHname.Label = '[name] '+hname
     
 #    for hostchild in host:
 #        print("    HostChild: <{}> {}".format(hostchild.tag,hostchild.attrib))
 
-    for hostname in host.find('hostnames').findall('hostname'):
-        print("    Hostname: <{}> {}".format(hostname.tag,hostname.attrib))
-        annotationNode = Node(TYPE_ANNOTATION)
-        hostNode.Children.append(annotationNode)
-        annotationNode.Label = '[name] '+hostname.attrib['name'].lower()
+    #for hostname in host.find('hostnames').findall('hostname'):
+    #    print("    Hostname: <{}> {}".format(hostname.tag,hostname.attrib))
+    #    annotationNode = Node(TYPE_ANNOTATION)
+    #    hostNode.Children.append(annotationNode)
+    #    annotationNode.Label = '[name] '+hostname.attrib['name']
+
         
-    tmpIPv6Addr = ''
-    tmpMACAddr = ''
     tmpLabel = ''
     
-    for address in host.findall('address'):
-        print("    Address: {}".format(address.attrib))
+    for tag in host.find('HostProperties').findall('tag'):
+        print("    tag: {}".format(tag.attrib))
         annotationNode = Node(TYPE_ANNOTATION)
-        hostNode.Children.append(annotationNode)
-        annotationNode.Label = '[addr] '+address.attrib['addr']
-        if 'vendor' in address.attrib:
-            annotationNode.Detail = '[vendor] '+address.attrib['vendor']
-        if address.attrib['addrtype'] == 'ipv4':
-            tmpLabel = address.attrib['addr']
-        elif address.attrib['addrtype'] == 'ipv6' and not tmpLabel:
-            tmpIPv6Addr = address.attrib['addr']
-        elif address.attrib['addrtype'] == 'mac' and not tmpLabel:
-            tmpMACAddr = address.attrib['addr']
-        if not tmpLabel:
-            tmpLabel = tmpIPv6Addr if tmpIPv6Addr else (tmpMACAddr if tmpMACAddr else str(uuid.uuid4()))
-        hostNode.Label = tmpLabel
+        if tag.attrib['name'] == 'host-rdns':
+            annotationNode.Label = '[name] '+tag.text
+        elif tag.attrib['name'] == 'host-ip':
+            annotationNode.Label = '[addr] '+tag.text
+            tmpLabel = tag.text
+        if annotationNode.Label:
+            hostNode.Children.append(annotationNode)
+
+    if not tmpLabel:
+        tmpLabel = str(uuid.uuid4())
+    hostNode.Label = tmpLabel
 
     print('**Hostnode: {}'.format(hostNode.Label))
     for c in hostNode.Children:
         print('  **Annot: {}'.format(c.Label))
 
+
+    portsDict = {}
+    
     count = 0
-    for port in host.find('ports').findall('port'):
+    for reportitem in host.findall('ReportItem'):
 
-        print("    Port: {}".format(port.attrib))
-        if port.find('state').attrib['state'] == 'open':
+        print("    ReportItem: {}".format(reportitem.attrib))
+        if reportitem.attrib['pluginID'] not in IgnoredPluginIDs:
 
-            portNode = Node(TYPE_PORT)
-            hostNode.Children.append(portNode)
-
-            portNode.Label = port.attrib['portid'] + '/' + port.attrib['protocol']
-
-            service = port.find('service')
-            if not service:
-                continue
-
-            print("         Service: {}".format(service.attrib))
-
+            portLabel = reportitem.attrib['port'] + '/' + reportitem.attrib['protocol']
+            if portLabel != '0/tcp':
+                portNode = portsDict[portLabel] if (portLabel in portsDict) else Node(TYPE_PORT)
+                if not portNode.Label:
+                    portNode.Label = portLabel
+                    hostNode.Children.append(portNode)
+                    portsDict[portLabel] = portNode
+            '''
+            portNode = portsDict[portLabel] if (portLabel in portsDict) else Node(TYPE_PORT)
+            if not portNode.Label:
+                portNode.Label = portLabel
+                hostNode.Children.append(portNode)
+                portsDict[portLabel] = portNode
+            '''
+            
+            itemLabel = str(4 - int(reportitem.attrib['severity']))+' '+reportitem.attrib['pluginName']
             body = ''
-            body += service.attrib['product']+' ' if 'product' in service.attrib else ''
-            body += service.attrib['version']+' ' if 'version' in service.attrib else ''
-            body += service.attrib['extrainfo']+' ' if 'extrainfo' in service.attrib else ''
-            body += service.attrib['ostype']+' ' if 'ostype' in service.attrib else ''
+
+            synopsisElement = reportitem.find('synopsis')
+            body += '[Synopsis]:\n'+synopsisElement.text+'\n\n' if not (synopsisElement is None) else ''
+            print('synopsis: '+synopsisElement.text)
+            
+            cvssElement = reportitem.find('cvss3_base_score')
+            body += '[CVSS Base Score]:\n'+cvssElement.text+'\n\n' if not (cvssElement is None) else ''
+
+            descriptionElement = reportitem.find('description')
+            body += '[Description]:\n'+descriptionElement.text+'\n\n' if not (descriptionElement is None) else ''
+
+            outputElement = reportitem.find('plugin_output')
+            body += '[Plugin Output]:\n'+html.unescape(outputElement.text)+'\n\n' if not (outputElement is None) else ''
+
+            solutionElement = reportitem.find('solution')
+            body += '[Solution]:\n'+solutionElement.text+'\n\n' if not (solutionElement is None) else ''
+
             body = body.strip()
 
-            UNKNOWN_SERVICE = 'Unknown Service'
-            if not body:
-                body = UNKNOWN_SERVICE
-            
-            for script in port.findall('script'):
-                print("         Script: {}".format(script.attrib))
-                scriptName = 'NSE Script: '+(script.attrib['id'] if script.attrib['id'] else '<?>')
-                body += '\n\n'+scriptName+'\n'+'-'*len(scriptName)+'\nOutput:\n'
-                for elem in script.findall('elem'):
-                    print("           Elem: {}, text: {}".format(elem.attrib, elem.text))
-                    if 'key' in elem.attrib and elem.text:
-                        body += elem.attrib['key'] + ': ' + elem.text + '\n'
-                for table in script.findall('table'):
-                    for telem in table.findall('elem'):
-                        print("           TElem: {}, text: {}".format(telem.attrib, telem.text))
-                        body += ' [*] '+telem.attrib['key'] + ': ' + telem.text + '\n'
-                
-                
-            count += 1
-            if body != UNKNOWN_SERVICE:
-                textNode = Node(TYPE_TEXT)
+            textNode = Node(TYPE_TEXT)
+            if portLabel != '0/tcp':
                 portNode.Children.append(textNode)
-                textNode.TextData = body
-                textNode.Label = "NMAP scan "+portNode.Label
-                print('create node: '+str(count)+' '+textNode.Label)
             else:
-                annotationNode = Node(TYPE_ANNOTATION)
-                portNode.Children.append(annotationNode)
-                annotationNode.Label = '(unknown service)'
-                print('create annotation: '+str(count)+' '+annotationNode.Label)
-                
+                hostNode.Children.append(textNode)
+            '''
+            portNode.Children.append(textNode)
+            '''
+            textNode.TextData = body
+            textNode.Label = itemLabel
+            print('create node: '+textNode.Label)
+
 
 def fetchNodes(query):
     response = urllib.request.urlopen("http://127.0.0.1:5000/nodes"+query)
@@ -256,21 +267,21 @@ try:
         print('located host '+nodeResult[PROP_LABEL])
 
     newFolder = Node(TYPE_FOLDER)
-    newFolder.Label = 'Nmap Import '+argdata['filename'].split('/')[-1]
+    newFolder.Label = 'Nessus Import '+argdata['filename'].split('/')[-1]
     newFolder.UID = 'newfolder_for_scan'
     newFolder.Parents.append(projectUID)
 
-    for nmapHost in allHosts:
+    for nessusHost in allHosts:
 
         nodesToUpsert = [newFolder.convert()]
         lookupExistingChildItems = {}
 
-        if nmapHost.Label in lookupExistingNodes:
-            nmapHost.UID = lookupExistingNodes[nmapHost.Label][PROP_UID]
+        if nessusHost.Label in lookupExistingNodes:
+            nessusHost.UID = lookupExistingNodes[nessusHost.Label][PROP_UID]
 
             #fetch ports for existing host
             querystring = '?uid={}&field={}&op={}&val={}&depth={}'.format(\
-                nmapHost.UID,\
+                nessusHost.UID,\
                 PROP_LASTMOD,\
                 'gt',\
                 0,\
@@ -285,20 +296,20 @@ try:
                     print('found existing: '+nodeResult[PROP_LABEL]+' '+nodeResult[PROP_UID])
                                 
         else:
-            nmapHost.UID = nmapHost.Label
-            nmapHost.Parents.append(newFolder.UID)
-            print('host not found creating: '+nmapHost.UID)
+            nessusHost.UID = nessusHost.Label
+            nessusHost.Parents.append(newFolder.UID)
+            print('host not found creating: '+nessusHost.UID+' under newFolder '+newFolder.UID)
 
-        print('NmapHost children count = '+str(len(nmapHost.Children)))
-        for childNode in nmapHost.Children:
+        print('NessusHost children count = '+str(len(nessusHost.Children)))
+        for childNode in nessusHost.Children:
             print('childNode type: '+childNode.Type+' childNode Label:'+childNode.Label)
             tmpkey = childNode.Type+'_'+childNode.Label
             if tmpkey in lookupExistingChildItems:
                 childNode.UID = lookupExistingChildItems[tmpkey][PROP_UID]
             else:
-                childNode.UID = nmapHost.UID+'_'+childNode.Label
+                childNode.UID = nessusHost.UID+'_'+childNode.Label
                 print('annotation/port not existing, creating new UID: '+childNode.UID)
-                #nmapHost.Children.append
+                #nessusHost.Children.append
             
             ccount = 0
             for c in childNode.Children:
@@ -310,7 +321,7 @@ try:
                 print('text/annotation creating: Type='+grandChildNode.Type+' child UID='+childNode.UID+', grandchild Label='+grandChildNode.Label)
             
             
-        recursiveConvertNodesToAPIFormat(nmapHost, nodesToUpsert)
+        recursiveConvertNodesToAPIFormat(nessusHost, nodesToUpsert)
 
         print(json.dumps(nodesToUpsert))
         serialisedJson = json.dumps(nodesToUpsert).encode('utf8')
@@ -320,6 +331,7 @@ try:
         if newFolder.UID == 'newfolder_for_scan':
            listOfUidsUpserted = json.loads(response.read().decode('utf8'))
            newFolder.UID = listOfUidsUpserted[0]
+
         
 except Exception as e:
     print('an exception occurred during the attempted update: '+str(e))

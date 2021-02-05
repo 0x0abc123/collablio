@@ -743,7 +743,7 @@ word-wrap: anywhere;
 
   <!-- Right side -->
   <div id="v_bottomnav" class="level-right">
-    <p class="level-item"><strong>{{v.node.l}}</strong></p>
+    <p class="level-item"><strong></strong></p>
   </div>
 
 </nav>
@@ -2633,7 +2633,8 @@ var vue_topnav = new Vue({
 	},
 	methods: {
 		vSync: async function() {
-			await fetchNodes(null,PROP_LASTMOD,'gt',_lastUpdateTime_Server,20);// _uids, _field = PROP_LASTMOD, _op = 'gt', _val = _lastUpdateTime_Server, _depth = 0
+			//await fetchNodes(null,PROP_LASTMOD,'gt',_lastUpdateTime_Server,20);// _uids, _field = PROP_LASTMOD, _op = 'gt', _val = _lastUpdateTime_Server, _depth = 0
+			await refreshNodes();
 		},
 		vNavBack: function() {
 			navigateMainPaneBack();
