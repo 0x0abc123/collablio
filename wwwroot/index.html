@@ -85,6 +85,9 @@ word-wrap: anywhere;
   vertical-align: middle;
 }
 
+.nowrap {
+  white-space: pre;
+}
 
 ::-webkit-scrollbar {
   width: 10px;
@@ -172,7 +175,7 @@ word-wrap: anywhere;
     <template type="text/x-template" id="item-template">
       <li>
 
-        <div :style="[{textIndent: getIndent},isCurrentlySelected() ? {'background-color' : '#CCEEFF'} : {}]" @contextmenu="showCtxMenu($event,item.uid)" 
+        <div class="nowrap" :style="[{textIndent: getIndent},isCurrentlySelected() ? {'background-color' : '#CCEEFF'} : {}]" @contextmenu="showCtxMenu($event,item.uid)" 
 			draggable @dragstart="startDrag($event,item.uid)" @drop='onDrop($event)' @dragover.prevent @dragenter.prevent >
 		<span><!--img v-bind:class="getIcon()"--><svg class="inln" width='1em' height='1em' viewBox='0 0 24 24'><use :href="'#'+getIcon()"></use></svg></span>
 		<span v-bind:style="[item.isViewed ? {} : {'font-weight': 'bold'}]" class="arrow" @click="viewNode($event,item.uid)">{{ item.l }}</span><!--{{ name() }}-->
@@ -479,7 +482,7 @@ word-wrap: anywhere;
 
   <!-- Right side -->
   <div id="v_topnav" class="level-right">
-    <p class="level-item"><strong>{{v.node.l}}</strong></p>
+    <p class="level-item"><strong>{{getLabel}}</strong></p>
     <p class="level-item is-size-3 ptr" @click="vNavBack()"><!--img style="stroke: blue;" v-bind:class="iconBack"--><svg class="inln" width='1em' height='1em' viewBox='0 0 24 24'><use :href="'#'+iconBack"></use></svg></p>
     <p class="level-item is-size-3 ptr" @click="vNavFwd()"><!--img v-bind:class="iconFwd"--><svg class="inln" width='1em' height='1em' viewBox='0 0 24 24'><use :href="'#'+iconFwd"></use></svg></p>
 
@@ -564,9 +567,15 @@ word-wrap: anywhere;
 					<!-- maybe add a hasAttachmentBody field to the typeConfig?? -->
 
 					<div class="columns is-vcentered">
-						<div class="column is-1"><span class="button is-info is-small drag" draggable @dragstart="startDrag($event,child.uid)">&#10021; Move</span></div>
-						<div class="column is-3 ptr pl-2" @click="viewNode($event,child.uid)"><!--img v-bind:class="getTypeIcon(child)"--><svg class="inln" width='1em' height='1em' viewBox='0 0 24 24'><use :href="'#'+getTypeIcon(child)"></use></svg> {{child.l}}</div>
-						<div class="column is-8 ptr pl-5" @click="viewNode($event,child.uid)">{{child.d}}</div>
+						<!--div class="column is-3"><span class="button is-info is-small drag" draggable @dragstart="startDrag($event,child.uid)">&#10021; Move</span></div>
+						<div class="column is-4 ptr pl-2" @click="viewNode($event,child.uid)"><svg class="inln" width='1em' height='1em' viewBox='0 0 24 24'><use :href="'#'+getTypeIcon(child)"></use></svg> {{child.l}}</div>
+						<div class="column is-5 ptr pl-5" @click="viewNode($event,child.uid)">{{child.d}}</div-->
+
+						<div class="column is-6"><span>
+						<span class="button is-info is-small drag" draggable @dragstart="startDrag($event,child.uid)">&#10021; Move</span>
+						<span class="ptr pl-2" @click="viewNode($event,child.uid)"><svg class="inln" width='1em' height='1em' viewBox='0 0 24 24'><use :href="'#'+getTypeIcon(child)"></use></svg> {{child.l}}</span>
+						</span></div>
+						<div class="column is-6 ptr pl-5" @click="viewNode($event,child.uid)">{{child.d}}</div>
 					</div>
 
 					</div>
@@ -2630,6 +2639,12 @@ var vue_topnav = new Vue({
 	   v: v_currently_selected_node,
 	   iconBack: 'ico-left-arr-dis',
 	   iconFwd: 'ico-right-arr-dis',
+	},
+	computed: {
+		getLabel: function() {
+			let label = this.v.node[PROP_LABEL];
+			return (label.length > 48) ? label.substring(0,48)+'...' : label;
+		}
 	},
 	methods: {
 		vSync: async function() {
