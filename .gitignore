@@ -1,5 +1,5 @@
 bin/
 obj/
 *.bak
-
+*.log
 #gitpush.sh
