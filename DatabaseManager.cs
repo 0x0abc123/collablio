@@ -207,7 +207,7 @@ namespace collablio
 				{ "$val" , val } 
 				};
 
-			if(nodeType != null)
+			if((nodeType != null) && (nodeType != ""))
 			{
 				vars["$type"] = nodeType;
 				type1 = ", $type: string";

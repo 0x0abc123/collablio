@@ -853,7 +853,7 @@ while True:
                         form.add_field('type', 'file_upload')
                         form.add_field('_p', json.dumps(params))
 
-                        # Add a fake file
+                        # Add the file
                         form.add_file('filedata', reportfile, fileHandle=open(reportfile, "rb"))
 
                         # Build the request, including the byte-string
