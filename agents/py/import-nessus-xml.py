@@ -101,7 +101,7 @@ etree = ETree.parse(argdata['filename'])
 root = etree.getroot()
 
 #print("Root tag: {}".format(root.tag))
-IgnoredPluginIDs = ['10180','10287','10919','11219','12053','19506','22964','25220','31422','39470','45590','50350','54615','132634']
+IgnoredPluginIDs = ['10180','10287','10919','11219','12053','19506','22964','25220','31422','39470','45590','50350','54615','110723','132634']
 allHosts = []
 
 reportElement = root.find('Report')
@@ -212,6 +212,11 @@ for host in reportElement.findall('ReportHost'):
             textNode.TextData = body
             textNode.Label = itemLabel
             print('create node: '+textNode.Label)
+            textNode.Detail = '{}:{} nessus plugin'.format(hostNode.Label, portNode.Label)
+
+    for c in hostNode.Children:
+        c.Detail = '{} (nessus {})'.format(hostNode.Label, argdata['projectname'])
+
 
 
 def fetchNodes(query):

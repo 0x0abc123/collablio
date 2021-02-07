@@ -143,10 +143,6 @@ for host in root.findall('host'):
             tmpLabel = tmpIPv6Addr if tmpIPv6Addr else (tmpMACAddr if tmpMACAddr else str(uuid.uuid4()))
         hostNode.Label = tmpLabel
 
-    print('**Hostnode: {}'.format(hostNode.Label))
-    for c in hostNode.Children:
-        print('  **Annot: {}'.format(c.Label))
-
     count = 0
     for port in host.find('ports').findall('port'):
 
@@ -185,8 +181,10 @@ for host in root.findall('host'):
                         body += elem.attrib['key'] + ': ' + elem.text + '\n'
                 for table in script.findall('table'):
                     for telem in table.findall('elem'):
-                        print("           TElem: {}, text: {}".format(telem.attrib, telem.text))
-                        body += ' [*] '+telem.attrib['key'] + ': ' + telem.text + '\n'
+                        #print("           TElem: {}, text: {}".format(telem.attrib, telem.text))
+                        te_key = telem.attrib['key'] if 'key' in telem.attrib else ''
+                        te_text = telem.text if telem.text else ''
+                        body += ' [*] '+ te_key + ': ' + te_text + '\n'
                 
                 
             count += 1
@@ -201,6 +199,12 @@ for host in root.findall('host'):
                 portNode.Children.append(annotationNode)
                 annotationNode.Label = '(unknown service)'
                 print('create annotation: '+str(count)+' '+annotationNode.Label)
+
+            for c in portNode.Children:
+                c.Detail = '{}:{} nmap script'.format(hostNode.Label, portNode.Label)
+
+    for c in hostNode.Children:
+        c.Detail = '{} (nmap {})'.format(hostNode.Label, argdata['projectname'])
                 
 
 def fetchNodes(query):
