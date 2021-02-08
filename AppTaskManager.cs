@@ -43,15 +43,6 @@ namespace collablio
 				);
 				LogService.Log(LOGLEVEL.DEBUG,formattedInput);
 			}; 
-			//XMLImportNmap
-			actions["import_nmap_xml"] = async (msg) => {
-				await XMLImportNmap.Run((AppTask)msg);
-				string formattedInput = String.Format(
-				"AppTask XMLImportNmap={0}, Task={1}, Thread={2}",
-				msg, Task.CurrentId, Thread.CurrentThread.ManagedThreadId
-				);
-				LogService.Log(LOGLEVEL.DEBUG,formattedInput);
-			};
 			//file upload
 			actions["file_upload"] = async (msg) => {
 				await FileUpload.Run((AppTask)msg);
