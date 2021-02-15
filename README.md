@@ -1,2 +1,2 @@
 # collablio
-Generic collaboration and notebook platform
+Graph database middleware
