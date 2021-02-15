@@ -61,7 +61,7 @@ namespace collablio
 			var host = new WebHostBuilder()
                 .UseKestrel()
 				.UseWebRoot(webRoot)
-                .UseUrls("http://*:5000")
+                .UseUrls("http://127.0.0.1:5000")
                 .UseStartup<Startup>()
                 .Build();
 
