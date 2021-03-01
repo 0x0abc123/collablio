@@ -71,10 +71,10 @@ namespace collablio
 		private static JsonSerializerOptions jsonSerialiseIgnoreNull;
 		private static JsonSerializerOptions jsonDeserialiseOptions;
 
-		public DatabaseManager()
+		private DatabaseManager()
 		{
 			AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-			_dbclient = new DgraphClient(GrpcChannel.ForAddress("http://127.0.0.1:9080"));
+			_dbclient = new DgraphClient(GrpcChannel.ForAddress("http://127.0.0.1:9080", new GrpcChannelOptions { MaxReceiveMessageSize = 100*1024*1024 }));
 	
 			jsonSerialiseOptions = new JsonSerializerOptions
 				{
@@ -143,6 +143,20 @@ namespace collablio
 			}
 		}
 
+		private string escapeAllNonAlphanumOrSpaceChars(string strVal) {
+			string retString = "";
+			Regex rgxAlphanumOrSpace = new Regex("[A-Za-z0-9 ,]");
+			foreach (char c in strVal) {
+				string cstr = c.ToString();
+				retString += (rgxAlphanumOrSpace.IsMatch(cstr) ? cstr  : '\\'+cstr);
+			}
+			return retString;
+		}
+
+		private string createRegex(string strVal) {
+			return '/' + escapeAllNonAlphanumOrSpaceChars(strVal) + "/i";
+		}
+		
 		public async Task<ServerResponse> QueryAsync(
 			List<string> uidsOfParentNodes = null, 
 			string field = null, 
@@ -180,6 +194,23 @@ namespace collablio
 			if(!allowedOps.Contains(op))
 				op = OP_TEXTSEARCH;
 
+			if(op == OP_TEXTSEARCH) {
+				val = val.Trim();
+				//Regex rgxDoubleQuoted = new Regex("^\"[^\"]+\"$");
+				//Regex rgxSingleQuoted = new Regex("^'[^']+'$");
+				//bool quotedValue = (rgxDoubleQuoted.IsMatch(val) || rgxSingleQuoted.IsMatch(val));
+				//if (quotedValue) //strip the quotes from val
+				//	val = val.Substring(1, val.Length - 2);
+				//if(quotedValue && val.Length > 2) {
+				if(val.Length > 2) {
+					op = "regexp";
+					val = createRegex(val);
+				}
+				else {
+					op = "allofterms";
+				}
+			}
+			
 			field = field.ToLower();
 			HashSet<string> allowedFields = new HashSet<string> {
 				PropsJson.LastModTime,
