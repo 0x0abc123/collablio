@@ -16,8 +16,8 @@ echo "setting up database schema..."
 
 curl "http://127.0.0.1:8080/alter" -XPOST -d $'
   ty: string @index(hash) .
-  l: string @index(term) .
-  d: string @index(term) .
+  l: string @index(term, trigram) .
+  d: string @index(term, trigram) .
   c: string @index(trigram) .
   x: string @index(trigram) .
   b: string .
