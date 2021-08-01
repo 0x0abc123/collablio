@@ -9,6 +9,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;    
 
 namespace collablio.Controllers
 {
@@ -32,11 +33,10 @@ namespace collablio.Controllers
 			return JsonSerializer.Serialize(obj,JsonOptions);
 		}
 		
-        [Route("sayhi/{name}")]
-        public IActionResult GetSayHi(string name)
+        [Route("isalive")]
+        public IActionResult CheckIsAlive()
         {
-			string greeting = String.Format("Hello {0}",name);
-            return Ok(greeting);
+            return Ok("true");
         }
 
         private async Task<string> _QueryNodesAsync(List<string> uids, string field, string op, string val, int depth, string type, bool includeBody = false)
@@ -59,6 +59,7 @@ namespace collablio.Controllers
         }
 
 
+		[Authorize]
 		[HttpGet]
         [Route("nodes")]
         public async Task<IActionResult> QueryNodesGet(string uid = null, string field=null, string op=null, string val=null, int depth = 0, string type = null, bool body = false)
@@ -68,6 +69,7 @@ namespace collablio.Controllers
 			return Ok(await _QueryNodesAsync(uids, field, op, val, depth, type, body));
         }
 
+		[Authorize]
 		[HttpGet]
         [Route("attachment/{attachmentUID}/{timestamp}")]
         public async Task<IActionResult> QueryAttachmentGet(string attachmentUID, long timestamp)
@@ -87,6 +89,7 @@ namespace collablio.Controllers
 		}
 		
 		//curl "http://10.3.3.60:5000/nodes" -H 'Content-Type: application/json' -d '{"uids":["0x2","0x3"],"depth":1}'
+        [Authorize]
 		[HttpPost]
         [Route("nodes")]
         public async Task<IActionResult> QueryNodesPost(QueryNodesPostData postData)
@@ -96,6 +99,7 @@ namespace collablio.Controllers
 
 		//upsertNode
 		//curl "http://10.3.3.60:5000/upsert" -H 'Content-Type: application/json' -d '[{"l":"Test1","d":"klf jlkj","x":"customdata a","ty":"blah","b":"blah","in":[{"uid":"0x2"}]}]'
+        [Authorize]
 		[HttpPost]
         [Route("upsert")]
         public async Task<IActionResult> UpsertNodesPost(List<Node> nodeList)
@@ -114,6 +118,7 @@ namespace collablio.Controllers
 			public List<string> children {get; set;}
 		}
 
+        [Authorize]
 		[HttpPost]
         [Route("link")]
         public async Task<IActionResult> LinkNodesPost(LinkNodesPostData postData)
@@ -122,6 +127,7 @@ namespace collablio.Controllers
 			return Ok(JsonSerialize(response));
         }
 
+        [Authorize]
 		[HttpPost]
         [Route("unlink")]
         public async Task<IActionResult> UnlinkNodesPost(LinkNodesPostData postData)
@@ -137,6 +143,7 @@ namespace collablio.Controllers
 
 
 		//delete should be implemented by creating an apptask to move nodes to recyclebin folder
+        [Authorize]
 		[HttpPost]
         [Route("move")]
         public async Task<IActionResult> MoveNodesPost(MoveNodesPostData postData)
@@ -158,12 +165,21 @@ namespace collablio.Controllers
 		// set content type for response
 		// set headers:  attachment
 		//https://stackoverflow.com/questions/42460198/return-file-in-asp-net-core-web-api
+        [AllowAnonymous]
 		[HttpGet]
         [Route("download/{attachmentUid}")]
-        public async Task<IActionResult> GetAttachmentDownload(string attachmentUid)
+        public async Task<IActionResult> GetAttachmentDownload(string attachmentUid, string sig, string exp, string non)
         {
 			try
 			{
+				var signatureString = Helpers.GetB64EncodedHS256FromString($"{attachmentUid}_{exp}_{non}");
+				if (signatureString != sig || DateTime.Compare(Helpers.UnixEpochToDateTime(Double.Parse(exp)), DateTime.Now.ToUniversalTime()) < 0 ) {
+					var curTime = Helpers.DateTimeToUnixEpoch(DateTime.Now.ToUniversalTime());
+					var dbginfo = $"sig={sig}, signatureStr={signatureString}, exp={exp}, curTime={curTime}, non={non}";
+					LogService.Log(LOGLEVEL.DEBUG,"ApiController: download attachment - "+dbginfo);
+					return Unauthorized();
+				}
+
 				ServerResponse r = await dbmgr.QueryAsync(
 					uidsOfParentNodes: new List<string> {attachmentUid}, 
 					includeBody: true
@@ -230,6 +246,7 @@ namespace collablio.Controllers
             return result;
         }
 
+        [Authorize]
 		[HttpPost]
         [Route("apptask")]
         public async Task<IActionResult> PostAppTask([FromForm] AppTask task)
@@ -237,6 +254,7 @@ namespace collablio.Controllers
 			return Ok(await HandleAppTask(task));
         }
 
+        [Authorize]
 		[HttpPost]
         [Route("upload")]
         public async Task<IActionResult> PostUploadFile([FromForm] AppTask task)
@@ -245,6 +263,7 @@ namespace collablio.Controllers
 			return Ok(await HandleAppTask(task));
         }
 
+        [Authorize]
         [Route("testruntask/{x}/{y}")]
         public IActionResult GetAddTask(string x, string y)
         {
@@ -254,6 +273,7 @@ namespace collablio.Controllers
 
 
 		// curl -v  -F 'filedata=@/mnt/c/Temp/test1.py' -F 'id=test1234' -F 'type=sdfjldf' -F '_p={"a":"v"}' http://192.168.0.103:5000/uploadtest
+        [Authorize]
 		[HttpPost]
         [Route("uploadtest")]
         //public async Task<IActionResult> PostUploadTest([FromForm] AppTask task)

@@ -18,6 +18,8 @@ namespace collablio
 			return retVal; 
 		}
 
+		private static HMACSHA256 _hs256 = new HMACSHA256();
+		
 		internal static readonly char[] chars =
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890".ToCharArray(); 
 				
@@ -38,6 +40,13 @@ namespace collablio
             }
             return result.ToString();
         }
+		
+		public static string GetB64EncodedHS256FromString(string input)
+		{
+			byte[] hashValue = _hs256.ComputeHash(Encoding.UTF8.GetBytes(input));
+			string base64hmac = Convert.ToBase64String(hashValue);
+			return base64hmac;
+		}
 		
 		public static ulong UIDToUlong(string uid)
 		{

@@ -9,17 +9,17 @@ fi
 
 echo "starting up dgraph docker standalone"
 bash ./run.sh
-
+echo "waiting for dgraph to start..."
 sleep 30
 
 echo "setting up database schema..."
 
 curl "http://127.0.0.1:8080/alter" -XPOST -d $'
   ty: string @index(hash) .
-  l: string @index(term, trigram) .
-  d: string @index(term, trigram) .
+  l: string @index(trigram, term) .
+  d: string @index(trigram, term) .
   c: string @index(trigram) .
-  x: string @index(trigram) .
+  x: string @index(trigram, term) .
   b: string .
   e: string @index(hash) .
   m: datetime @index(hour) .
@@ -28,7 +28,9 @@ curl "http://127.0.0.1:8080/alter" -XPOST -d $'
   out: [uid] @reverse .
   lnk: [uid] @reverse .
   ro: string @index(hash) .
-
+  username: string @index(hash) .
+  password: string @index(hash) .
+  
   type N {
 	ty
 	l 
@@ -43,5 +45,10 @@ curl "http://127.0.0.1:8080/alter" -XPOST -d $'
 	out 
 	lnk
 	ro
+  }
+  
+  type U {
+	username
+	password
   }
 '

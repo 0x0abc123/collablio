@@ -2,8 +2,9 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-
 using Microsoft.AspNetCore.Hosting;
+
+using Microsoft.Extensions.Logging;
 
 namespace collablio
 {
@@ -60,8 +61,13 @@ namespace collablio
 
 			var host = new WebHostBuilder()
                 .UseKestrel()
+				.ConfigureLogging(logging =>
+				{
+					logging.ClearProviders();
+					logging.AddConsole();
+				})
 				.UseWebRoot(webRoot)
-                .UseUrls("http://127.0.0.1:5000")
+                .UseUrls("http://127.0.0.1:5000;http://127.0.0.1:5001")
                 .UseStartup<Startup>()
                 .Build();
 
