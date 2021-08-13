@@ -183,7 +183,11 @@ namespace collablio
 			uidsOfParentNodes = (uidsOfParentNodes?.Count > 0) ?  uidsOfParentNodes : new List<string>{ROOTNODE_UID};
 			List<string> sanitisedParentNodeList = new List<string>();
 			foreach (string s in uidsOfParentNodes)
-				sanitisedParentNodeList.Add(Helpers.SanitiseUID(s));
+			{
+				string sanitisedUid = Helpers.SanitiseUID(s);
+				sanitisedUid = (sanitisedUid != "0x0") ? sanitisedUid : ROOTNODE_UID; //dgraph throws an exception now when trying to fetch 0x0
+				sanitisedParentNodeList.Add(sanitisedUid);
+			}
 			string serialisedParentNodeList = "["+String.Join(",",sanitisedParentNodeList)+"]";
 
 			// ensure op is an allowed value

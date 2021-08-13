@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Dgraph" Version="20.3.0" />
+    <PackageReference Include="Dgraph" Version="21.3.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.Owin" Version="3.1" />
   </ItemGroup>
 
