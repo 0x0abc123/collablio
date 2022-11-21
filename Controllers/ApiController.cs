@@ -86,6 +86,7 @@ namespace collablio.Controllers
 			public string val {get; set;}
 			public int depth {get; set;}
 			public string type {get; set;}
+			public bool body {get; set;} = false;
 		}
 		
 		//curl "http://10.3.3.60:5000/nodes" -H 'Content-Type: application/json' -d '{"uids":["0x2","0x3"],"depth":1}'
@@ -94,7 +95,7 @@ namespace collablio.Controllers
         [Route("nodes")]
         public async Task<IActionResult> QueryNodesPost(QueryNodesPostData postData)
         {
-			return Ok(await _QueryNodesAsync(postData.uids, postData.field, postData.op, postData.val, postData.depth, postData.type));
+			return Ok(await _QueryNodesAsync(postData.uids, postData.field, postData.op, postData.val, postData.depth, postData.type, postData.body));
         }
 
 		//upsertNode

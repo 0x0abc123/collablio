@@ -3,8 +3,8 @@
 
 if [[ -z $(docker image ls | grep 'dgraph/standalone') ]]
 then 
-	echo "running: docker pull dgraph/standalone"
-	docker pull dgraph/standalone
+	echo "running: docker pull dgraph/standalone:v20.11.3"
+	docker pull dgraph/standalone:v20.11.3
 fi
 
 echo "starting up dgraph docker standalone"

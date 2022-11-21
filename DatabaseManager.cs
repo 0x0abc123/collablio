@@ -190,6 +190,7 @@ namespace collablio
 			foreach (string s in uidsOfParentNodes)
 			{
 				string sanitisedUid = Helpers.SanitiseUID(s);
+				//LogService.Log(LOGLEVEL.DEBUG,$"DBManager sanitisedUid={sanitisedUid}");
 				sanitisedUid = (sanitisedUid != "0x0") ? sanitisedUid : ROOTNODE_UID; //dgraph throws an exception now when trying to fetch 0x0
 				sanitisedParentNodeList.Add(sanitisedUid);
 			}
