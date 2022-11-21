@@ -23,6 +23,11 @@ namespace collablio
 		public List<Node> qr { get; set; }
 	}
 
+	public class QueryResultUser
+	{
+		public List<User> qr { get; set; }
+	}
+
 	//////////////////////////////////////////////////////
 	//  to protect the root node from being modified
 	//  we put the uniqueKey in the "ro" field that is in the "N" schema but not serialised/deserialised using the Node Class
@@ -185,6 +190,7 @@ namespace collablio
 			foreach (string s in uidsOfParentNodes)
 			{
 				string sanitisedUid = Helpers.SanitiseUID(s);
+				//LogService.Log(LOGLEVEL.DEBUG,$"DBManager sanitisedUid={sanitisedUid}");
 				sanitisedUid = (sanitisedUid != "0x0") ? sanitisedUid : ROOTNODE_UID; //dgraph throws an exception now when trying to fetch 0x0
 				sanitisedParentNodeList.Add(sanitisedUid);
 			}
@@ -590,6 +596,38 @@ await txn.Mutate(request);
 			transactionResult = await DoTransaction(TX_SET, setList, jsonSerialiseIgnoreNull);
 			LogService.Log(LOGLEVEL.DEBUG,"DBManager UnLinkNodesAsync (set) Result: "+transactionResult.ToString());
 			return new ServerResponse { message = ((transactionResult.IsFailed) ? "An Error Occurred" : "Update Success") , error = transactionResult.IsFailed};
+		}
+
+
+
+
+
+		public async Task<User> QueryUserAsync(string username)
+		{
+
+			var vars = new Dictionary<string,string> { 
+				{ "$username" , username }
+			};
+
+			var query = "";
+
+			query = @"query q($username: string){ qr(func: type(U)) @filter (eq(username,$username)) { uid username password } }";
+
+			var res = await _dbclient.NewReadOnlyTransaction().QueryWithVars(query, vars);
+			LogService.Log(LOGLEVEL.DEBUG,$"DBManager QueryUserAsync result:\nQuery: {query}\nvars: username='{username}'\nRes: {res}");
+
+			if (res.IsFailed){
+				//LogService.Log(LOGLEVEL.DEBUG,"result isFailed");
+				return null;
+			}
+			
+			Console.Write(res.Value.Json);
+
+			QueryResultUser queryResult = JsonSerializer.Deserialize<QueryResultUser>(res.Value.Json);
+
+			User u = queryResult.qr.Count > 0 ? queryResult.qr[0] : null;
+
+			return u;
 		}
 
 
