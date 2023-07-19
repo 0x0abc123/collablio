@@ -39,6 +39,14 @@ namespace collablio.Controllers
             return Ok("true");
         }
 
+		[Authorize]
+		[HttpGet]
+        [Route("checkauth")]
+        public IActionResult CheckIsAuthenticated()
+        {
+            return Ok("true");
+        }
+
         private async Task<string> _QueryNodesAsync(List<string> uids, string field, string op, string val, int depth, string type, bool includeBody = false)
         {
 			ServerResponse r = new ServerResponse();
