@@ -3,7 +3,6 @@ using System.IO;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication;
-//using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Linq;
 using System.Collections.Generic;
 using collablio.Models;
@@ -16,7 +15,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;    
 using Microsoft.IdentityModel.Tokens;    
 using System.IdentityModel.Tokens.Jwt;    
-//using Microsoft.IdentityModel.Tokens.Jwt;    
 using System.Security.Claims;    
    
 namespace collablio.Controllers    
@@ -31,17 +29,13 @@ namespace collablio.Controllers
 		public static readonly int SESSION_TIMEOUT = 120;
 		
 		private static string JWT_SECRET_KEY = Helpers.GetUniqueKey(20);
-		//private readonly IHttpContextAccessor _httpContextAccessor;
 
+		private static ConfigManager confmgr = ConfigManager.Instance();
 		private static DatabaseManager dbmgr = DatabaseManager.Instance();
 		private static AntiBruteForceManager abfmgr = new AntiBruteForceManager();
 		
-        //public AuthController(IHttpContextAccessor httpContextAccessor)
         public AuthController()
         {
-            //_config = config;
-			//JWT_SECRET_KEY = Helpers.GetUniqueKey(20);
-			//_httpContextAccessor = httpContextAccessor;
         }
 
 		public class UserLoginData
@@ -71,9 +65,11 @@ namespace collablio.Controllers
 			
             var user = await AuthenticateUser(userData.username, userData.password);
 
+			int timeout = Int32.Parse(confmgr.GetValue("sessiontimeout"));
+
             if (user != null)
             {
-                var tokenString = GenerateJSONWebToken(user, SESSION_TIMEOUT);
+                var tokenString = GenerateJSONWebToken(user, timeout);
                 response = Ok(new { token = tokenString });
             }
 
@@ -81,59 +77,12 @@ namespace collablio.Controllers
         }
 
 
-        [AllowAnonymous]
-        [HttpPost]
-		[Route("service/{actionstr}")]
-        //public async Task<IActionResult> LocalServiceEndpoint(string actionstr)
-		public IActionResult LocalServiceEndpoint(string actionstr)
-        {
-            IActionResult response = Unauthorized();
-			LogService.Log(LOGLEVEL.DEBUG,"AuthController: LocalServiceEndpoint "+actionstr+", port="+Request.HttpContext.Connection.LocalPort); 
-
-			if (actionstr == "gettemptoken")
-			{
-				var localport = Request.HttpContext.Connection.LocalPort.ToString(); //Request.Host header can be spoofed
-				if (localport == "5001")
-				{
-					//var user = await AuthenticateUser(userData.username, userData.password);
-					//if (user != null)
-					//{
-					var tokenString = GenerateJSONWebToken("TODO_CHANGE_THIS", 1);
-					response = Ok(new { token = tokenString });
-					//}
-				}
-			}
-            return response;
-        }
 
         [Authorize]
 		[Route("downloadtoken/{attachmentUid}")]
         public IActionResult IssueTemporaryAuthToken(string attachmentUid)
         {
             IActionResult response = Unauthorized();
-			/*
-			var token = await HttpContext.GetTokenAsync("access_token");
-			var handler = new JwtSecurityTokenHandler();
-			var jsonToken = handler.ReadToken(token);
-			var tokenS = jsonToken as JwtSecurityToken;
-			var username = tokenS.Claims.FirstOrDefault(claim => claim.Type == "username").Value;
-			
-			
-			//This was the best option
-			//using System.Linq;
-			var username = "";
-			var claims = HttpContext.User.Claims;
-			var userclaim = claims.FirstOrDefault( c => c.Type == "username");
-			username = userclaim.Value;
-			*/
-			/*
-			foreach (Claim c in claims)
-				if (c.Type == "username")
-					username = c.Value;
-			*/
-			//var username = HttpContext.User.Claims.First( c => c.Type == "username").Value;
-			
-			//var tokenString = GenerateJSONWebToken(username,1);
 
 			var exp = (Helpers.DateTimeToUnixEpoch(DateTime.Now.ToUniversalTime().AddMinutes(1))).ToString("F0");
 			var non = Helpers.GetUniqueKey(16);

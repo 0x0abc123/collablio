@@ -18,7 +18,7 @@ namespace collablio
 
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            services.AddControllers(options => options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true);
 			//services.TryAddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 			services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)    
 			.AddJwtBearer(options =>
@@ -51,60 +51,5 @@ namespace collablio
             });
         }
     }
-
-
-/*
-public class CustomJwtSecurityTokenHandler : ISecurityTokenValidator
-{
-    private int _maxTokenSizeInBytes = TokenValidationParameters.DefaultMaximumTokenSizeInBytes;
-    private JwtSecurityTokenHandler _tokenHandler;
-
-	private readonly IHttpContextAccessor _httpContextAccessor;
-
-	public CustomJwtSecurityTokenHandler(IHttpContextAccessor httpContextAccessor)
-	{
-		_httpContextAccessor = httpContextAccessor;
-		_tokenHandler = new JwtSecurityTokenHandler();
-	}
-    
-    public bool CanValidateToken
-    {
-        get
-        {
-            return true;
-        }
-    }
-
-    public int MaximumTokenSizeInBytes
-    {
-        get
-        {
-            return _maxTokenSizeInBytes;
-        }
-
-        set
-        {
-            _maxTokenSizeInBytes = value;
-        }
-    }
-
-    public bool CanReadToken(string securityToken)
-    {
-        return _tokenHandler.CanReadToken(securityToken);            
-    }
-
-    public ClaimsPrincipal ValidateToken(string securityToken, TokenValidationParameters validationParameters, out SecurityToken validatedToken)
-    {
-        //How to access HttpContext/IP address from here?  httpContextAccessor
-		var httpContext = _httpContextAccessor.HttpContext;
-
-        var principal = _tokenHandler.ValidateToken(securityToken, validationParameters, out validatedToken);
-
-        return principal;
-    }
-}
-*/
-
-
 
 }

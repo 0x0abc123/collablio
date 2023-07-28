@@ -87,28 +87,44 @@ namespace collablio.Models
 		
 	}
 
-    public class Node
-    {
-		public static readonly string TYPE_ROOTNODE = "_";
-		public static readonly string TYPE_CLIENT = "Cl";
-		public static readonly string TYPE_PROJECT = "Pr";
-		public static readonly string TYPE_GROUP = "Gr";
-		public static readonly string TYPE_SUBGROUP = "Sg";
-		public static readonly string TYPE_ITEM = "It";
-		public static readonly string TYPE_ATTACHMENT = "At";
-		public static readonly string TYPE_REPORT = "Rp";
+	
+	public class JustUidAndOutgoingEdges
+	{
+		public string UID {get; set;}
+		public DateTime? LastModifiedTime { get; set; } = null;
+		public List<JustUidAndOutgoingEdges>? Children {get; set;} = null;
+		public List<JustUidAndOutgoingEdges>? OutLinks {get; set;} = null;
 
+		public JustUidAndOutgoingEdges()
+		{
+		}
+
+		public JustUidAndOutgoingEdges(
+			string uid, 
+			List<JustUidAndOutgoingEdges>? children = null, 
+			List<JustUidAndOutgoingEdges>? outlinks = null, 
+			bool initialiseTime = false)
+		{
+			UID = uid;
+			Children = children;
+			OutLinks = outlinks;
+			if (initialiseTime) SetLastModTimeToNow();
+		}
+		
+		public virtual void SetLastModTimeToNow()
+		{
+			LastModifiedTime = DateTime.UtcNow;
+		}
+		
+	}
+
+    public class Node : JustUidAndOutgoingEdges
+    {
 		public static readonly string ATTACH_EMPTY = "_";
 
-		public static readonly string TAG_NORMAL = "_";
-		public static readonly string TAG_ALERT = "!";
-		public static readonly string TAG_PROTO = "p";
-
-		public static readonly string GROUP_DEFAULT = "Default Group";
-
-		public string UID { get; set; } // Dgraph UID (of the format 0xNN)
+		//public string UID { get; set; } // Dgraph UID (of the format 0xNN)
 		public string Type { get; set; } // user defined type
-		public DateTime LastModifiedTime { get; set; } // last modified timestamp
+		//public DateTime LastModifiedTime { get; set; } // last modified timestamp
 		public DateTime? EventTimestamp { get; set; } = null; // custom timestamp
 		public string WhoIsEditing { get; set; } // if/who is currently editing
 		public string Label { get; set; } // label/name/title
@@ -117,9 +133,11 @@ namespace collablio.Models
 		public string B64Data { get; set; } //base64 data (this is public but should be get/set using GetBase64AsBytes and SetBase64FromBytes
 		public string TextData { get; set; } // custom data (string)
 		public List<string> DgraphType { get; } //this should only be "N". The dgraph type is native to the database, the user type field is used by the client
-		public List<NodeWithUidAndChildren> Parents { get; set; } //instead of "Edges" the app stores references to linked nodes UIDs
-		public List<NodeWithUidAndChildren> Children { get; set; }
-		
+		public List<JustUidAndOutgoingEdges> Parents { get; set; } //instead of "Edges" the app stores references to linked nodes UIDs
+		//public List<JustUidAndOutgoingEdges> Children { get; set; }
+		public List<JustUidAndOutgoingEdges> InLinks { get; set; }
+		//public List<JustUidAndOutgoingEdges> OutLinks { get; set; }
+
 		public Node()
 		{
 			SetLastModTimeToNow();
@@ -131,10 +149,10 @@ namespace collablio.Models
 			Type = _type;
 		}
 		
-		public void SetLastModTimeToNow()
+		/*public void SetLastModTimeToNow()
 		{
 			LastModifiedTime = DateTime.UtcNow;
-		}
+		}*/
 		
 		public void SetBase64FromBytes(Byte[] bytes)
 		{
@@ -145,59 +163,19 @@ namespace collablio.Models
 		{
 			return (B64Data == null || B64Data == "") ? null : Convert.FromBase64String(B64Data);
 		}		
-
+		
 		public void AddParent(string parentUid)
 		{
-			if(Parents == null)
-				Parents = new List<NodeWithUidAndChildren>();
-			Parents.Add(new NodeWithUidAndChildren { UID = parentUid });
+			if(Parents == null) Parents = new List<JustUidAndOutgoingEdges>();
+			Parents.Add(new JustUidAndOutgoingEdges { UID = parentUid });
 		}
+		public void AddInLink(string srcUid)
+		{
+			if(InLinks == null) InLinks = new List<JustUidAndOutgoingEdges>();
+			InLinks.Add(new JustUidAndOutgoingEdges { UID = srcUid });
+		}
+
 	}
 
-	public class NodeWithUid
-	{
-		public string UID {get; set;}
-		public DateTime? LastModifiedTime { get; set; } = null;
-
-		public NodeWithUid()
-		{
-		}
-
-		public NodeWithUid(string uid, bool initialiseTime = false)
-		{
-			UID = uid;
-			if (initialiseTime) SetLastModTimeToNow();
-		}
-		
-		public void SetLastModTimeToNow()
-		{
-			LastModifiedTime = DateTime.UtcNow;
-		}
-		
-	}
-	
-	public class NodeWithUidAndChildren
-	{
-		public string UID {get; set;}
-		public List<NodeWithUid> Children {get; set;}
-		public DateTime? LastModifiedTime { get; set; } = null;
-
-		public NodeWithUidAndChildren()
-		{
-		}
-
-		public NodeWithUidAndChildren(string uid, List<NodeWithUid> children = null, bool initialiseTime = false)
-		{
-			UID = uid;
-			Children = children;
-			if (initialiseTime) SetLastModTimeToNow();
-		}
-		
-		public void SetLastModTimeToNow()
-		{
-			LastModifiedTime = DateTime.UtcNow;
-		}
-		
-	}
 
 }

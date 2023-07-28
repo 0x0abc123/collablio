@@ -19,7 +19,7 @@ namespace collablio
 		}
 
 		private static HMACSHA256 _hs256 = new HMACSHA256();
-		
+		private static MD5 _md5 = MD5.Create();
 		internal static readonly char[] chars =
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890".ToCharArray(); 
 				
@@ -47,7 +47,16 @@ namespace collablio
 			string base64hmac = Convert.ToBase64String(hashValue);
 			return base64hmac;
 		}
-		
+
+		public static string GetMD5HashOfString(string input)
+		{
+			byte[] hashBytes = _md5.ComputeHash(Encoding.UTF8.GetBytes(input));
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < hashBytes.Length; i++)
+                sb.Append(hashBytes[i].ToString("X2"));
+            return sb.ToString();
+		}
+
 		public static ulong UIDToUlong(string uid)
 		{
 			try

@@ -47,7 +47,7 @@ namespace collablio.Controllers
             return Ok("true");
         }
 
-        private async Task<string> _QueryNodesAsync(List<string> uids, string field, string op, string val, int depth, string type, bool includeBody = false)
+        private async Task<string> _QueryNodesAsync(List<string>? uids, string? field, string? op, string? val, int depth, string? type, bool includeBody = false)
         {
 			ServerResponse r = new ServerResponse();
 			try
@@ -70,10 +70,10 @@ namespace collablio.Controllers
 		[Authorize]
 		[HttpGet]
         [Route("nodes")]
-        public async Task<IActionResult> QueryNodesGet(string uid = null, string field=null, string op=null, string val=null, int depth = 0, string type = null, bool body = false)
+        public async Task<IActionResult> QueryNodesGet(string? uid = null, string? field=null, string? op=null, string? val=null, int depth = 0, string? type = null, bool body = false)
         {
 			//TODO: when ACLs are implemented, restrict body=true to automation accounts, not all users
-			List<string> uids = (uid != null) ? new List<string> {uid} : null;
+			List<string>? uids = (uid != null) ? new List<string> {uid} : null;
 			return Ok(await _QueryNodesAsync(uids, field, op, val, depth, type, body));
         }
 
@@ -88,12 +88,12 @@ namespace collablio.Controllers
 
 		public class QueryNodesPostData
 		{
-			public List<string> uids {get; set;}
-			public string field {get; set;}
-			public string op {get; set;}
-			public string val {get; set;}
-			public int depth {get; set;}
-			public string type {get; set;}
+			public List<string>? uids {get; set;} = new List<string>();
+			public string? field {get; set;} = null;
+			public string? op {get; set;} = null;
+			public string? val {get; set;} = null;
+			public int depth {get; set;} = 0;
+			public string? type {get; set;} = null;
 			public bool body {get; set;} = false;
 		}
 		
@@ -122,9 +122,9 @@ namespace collablio.Controllers
 
 		public class LinkNodesPostData
 		{
-			public List<string> nodes {get; set;}
-			public List<string> parents {get; set;}
-			public List<string> children {get; set;}
+			public List<string>? nodes {get; set;}
+			public List<string>? incoming {get; set;}
+			public List<string>? outgoing {get; set;}
 		}
 
         [Authorize]
@@ -132,7 +132,7 @@ namespace collablio.Controllers
         [Route("link")]
         public async Task<IActionResult> LinkNodesPost(LinkNodesPostData postData)
         {
-			var response = await dbmgr.LinkNodesAsync(postData.nodes, postData.parents, postData.children);
+			var response = await dbmgr.AddLinkRelationsAsync(postData.nodes, postData.incoming, postData.outgoing);
 			return Ok(JsonSerialize(response));
         }
 
@@ -141,12 +141,15 @@ namespace collablio.Controllers
         [Route("unlink")]
         public async Task<IActionResult> UnlinkNodesPost(LinkNodesPostData postData)
         {
-			var response = await dbmgr.UnlinkNodesAsync(postData.nodes, postData.parents, postData.children);
+			var response = await dbmgr.RemoveLinkRelationsAsync(postData.nodes, postData.incoming, postData.outgoing);
 			return Ok(JsonSerialize(response));
         }
 
-		public class MoveNodesPostData : LinkNodesPostData
+		public class MoveNodesPostData
 		{
+			public List<string>? nodes {get; set;}
+			public List<string>? parents {get; set;}
+			public List<string>? children {get; set;}
 			public string newparent {get; set;}
 		}
 
@@ -157,9 +160,9 @@ namespace collablio.Controllers
         [Route("move")]
         public async Task<IActionResult> MoveNodesPost(MoveNodesPostData postData)
         {
-			var response = await dbmgr.UnlinkNodesAsync(postData.nodes, postData.parents, postData.children);
+			var response = await dbmgr.RemoveParentChildRelationsAsync(postData.nodes, postData.parents, postData.children);
 			if(!response.error)
-				response = await dbmgr.LinkNodesAsync(postData.nodes, new List<string> {postData.newparent});
+				response = await dbmgr.AddParentChildRelationsAsync(postData.nodes, new List<string> {postData.newparent});
 
 			return Ok(JsonSerialize(response));				
         }

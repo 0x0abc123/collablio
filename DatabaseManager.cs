@@ -1,19 +1,19 @@
 using System;
-using System.Text;
-using System.Linq;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Threading;
 using System.Threading.Tasks;
 using Dgraph;
 using Dgraph.Transactions;
 using FluentResults;
-using Grpc.Core;
 using Grpc.Net.Client;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using collablio.Models;
+//using System.Text.Json.Serialization;
+//using Grpc.Core;
+//using System.Text;
+//using System.Linq;
+//using System.Security.Cryptography;
+//using System.Threading;
 
 namespace collablio
 {
@@ -26,6 +26,24 @@ namespace collablio
 	public class QueryResultUser
 	{
 		public List<User> qr { get; set; }
+	}
+
+	public class QueryOptionsClause
+	{
+		public List<QueryOptionsClause>? and { get; set; } = null;
+		public List<QueryOptionsClause>? or { get; set; } = null;
+		public string? field { get; set; } = null;
+		public string? op { get; set; } = null;
+		public string? val { get; set; } = null;
+	}
+
+	public class QueryOptions
+	{
+		public List<string>? rootIds { get; set; }
+		public string recurse { get; set; } = "out";
+		public uint depth { get; set; } = 0;
+		public QueryOptionsClause? filters { get; set; }
+		public bool includeBody { get; set; } = false;
 	}
 
 	//////////////////////////////////////////////////////
@@ -56,7 +74,19 @@ namespace collablio
 		public static readonly string OP_GTE = "gte";
 		public static readonly string OP_LTE = "lte";
 		public static readonly string OP_TEXTSEARCH = "allofterms";
-		
+
+		private enum EdgeType {
+			Parent,
+			Link
+		}
+
+		private	Regex rgx_uid = new Regex(@"^0x[0-9a-f]+$");
+
+		private enum UpdateType {
+			Add,
+			Delete
+		}
+
 		private static DatabaseManager _singleton = null;
 		public static DatabaseManager Instance()
 		{
@@ -70,7 +100,7 @@ namespace collablio
 		
 		private DgraphClient _dbclient;
 
-		//ensure that schemasetup.sh has already been run to setup the database
+		//ensure that dgraph/setup.sh has already been run to setup the database
 
 		private static JsonSerializerOptions jsonSerialiseOptions;
 		private static JsonSerializerOptions jsonSerialiseIgnoreNull;
@@ -135,7 +165,7 @@ namespace collablio
 			else
 			{
 				RootNode rn = new RootNode {UID = "_:tmpkey", Type = "__ROOT__", ro = ROOT_NODE_LABEL };
-				var result = await DoTransaction(TX_SET, rn, jsonSerialiseIgnoreNull);
+				var result = await DoTransaction(UpdateType.Add, rn, jsonSerialiseIgnoreNull);
 				if(result.IsFailed)
 				{
 					LogService.Log(LOGLEVEL.DEBUG,$"DBManager DoTx failed, result: {result}");
@@ -163,64 +193,52 @@ namespace collablio
 		}
 		
 		public async Task<ServerResponse> QueryAsync(
-			List<string> uidsOfParentNodes = null, 
-			string field = null, 
-			string op = null, 
-			string val = null, 
+			List<string>? uidsOfParentNodes = null, 
+			string? field = null, 
+			string? op = null, 
+			string? val = null, 
 			int recurseDepth = 0,  //in dgraph recurse level 0 means unlimited but here we interpret it as no recurse
-			string nodeType = null,
+			string? nodeType = null,
 			bool includeBody = false,
-//-----
 			bool upwardsRecurse = false
-//-----
 			)
 		{
+			QueryOptions qo = new QueryOptions();
+			qo.rootIds = uidsOfParentNodes;
+			qo.depth = (uint)recurseDepth;
+			qo.includeBody = includeBody;
+			qo.recurse = (upwardsRecurse) ? "outinv" : "out";
 			
-			field = field ?? PropsJson.LastModTime;
-			op = op ?? OP_GT;
-			val = val ?? "0";
-			recurseDepth = (recurseDepth > MAX_RECURSE_DEPTH) ? MAX_RECURSE_DEPTH : ((recurseDepth < 0) ? 0 : recurseDepth);
-			
-			//dgraph expects a string of uids like this: "[0x1, 0x2, 0x3]"
-			//JsonSerializer.Serialize(uidsOfParentNodes) will quote each so the string is "[\"0x1\", \"0x2\", \"0x3\"]" 
-			//this causes a parse error in dgraphQL
-			// it seems to do its own validation but to be safe...
-			uidsOfParentNodes = (uidsOfParentNodes?.Count > 0) ?  uidsOfParentNodes : new List<string>{ROOTNODE_UID};
-			List<string> sanitisedParentNodeList = new List<string>();
-			foreach (string s in uidsOfParentNodes)
-			{
-				string sanitisedUid = Helpers.SanitiseUID(s);
-				//LogService.Log(LOGLEVEL.DEBUG,$"DBManager sanitisedUid={sanitisedUid}");
-				sanitisedUid = (sanitisedUid != "0x0") ? sanitisedUid : ROOTNODE_UID; //dgraph throws an exception now when trying to fetch 0x0
-				sanitisedParentNodeList.Add(sanitisedUid);
+			QueryOptionsClause tmpCl = new QueryOptionsClause();
+			tmpCl.field = field ?? PropsJson.LastModTime;
+			tmpCl.op = op ?? OP_GT;
+			tmpCl.val = val ?? "0";
+			if(nodeType == null || nodeType.Length < 1){
+				qo.filters = tmpCl;
 			}
-			string serialisedParentNodeList = "["+String.Join(",",sanitisedParentNodeList)+"]";
+			else {
+				QueryOptionsClause typCl = new QueryOptionsClause();
+				typCl.field = PropsJson.Type;
+				typCl.op = OP_EQ;
+				typCl.val = nodeType;
+				qo.filters = new QueryOptionsClause();
+				qo.filters.and = new List<QueryOptionsClause>() {tmpCl, typCl};
+			}
+			return await QueryWithOptionsAsync(qo);
+		}
 
-			// ensure op is an allowed value
+        private string renderOp(string? op) { 
+			op = op ?? OP_GT; 
 			op = op.ToLower();
 			HashSet<string> allowedOps = new HashSet<string> {
 				OP_EQ,OP_GT,OP_LT,OP_LTE,OP_GTE,OP_TEXTSEARCH
 			};
 			if(!allowedOps.Contains(op))
 				op = OP_TEXTSEARCH;
-
-			if(op == OP_TEXTSEARCH) {
-				val = val.Trim();
-				//Regex rgxDoubleQuoted = new Regex("^\"[^\"]+\"$");
-				//Regex rgxSingleQuoted = new Regex("^'[^']+'$");
-				//bool quotedValue = (rgxDoubleQuoted.IsMatch(val) || rgxSingleQuoted.IsMatch(val));
-				//if (quotedValue) //strip the quotes from val
-				//	val = val.Substring(1, val.Length - 2);
-				//if(quotedValue && val.Length > 2) {
-				if(val.Length > 2) {
-					op = "regexp";
-					val = createRegex(val);
-				}
-				else {
-					op = "allofterms";
-				}
-			}
-			
+			return op; 
+		}
+        private string renderField(string? field) { 
+			field = field ?? PropsJson.LastModTime;
 			field = field.ToLower();
 			HashSet<string> allowedFields = new HashSet<string> {
 				PropsJson.LastModTime,
@@ -234,33 +252,108 @@ namespace collablio
 			};
 			if(!allowedFields.Contains(field))
 				field = PropsJson.Label;
-			//field = (op == "allofterms") ? "" : field + ",";
+			return field; 
+		}
 
-			//the timestamp values we received from the client should be unix epoch format, so convert to this format: 2006-01-02T15:04:05
-			if(field == PropsJson.LastModTime || field == PropsJson.EventTimestamp)
-				val = (Helpers.UnixEpochToDateTime(Convert.ToDouble(val))).ToString("o");
+        private string renderDirection(string? dirstr) { 
+			dirstr = dirstr ?? "out";
+			var directions = new Dictionary<string,string> { 
+				{ "out" , "out" },
+				{ "outinv" , "~out" },
+				{ "lnk" , "lnk" },
+				{ "lnkinv" , "~lnk" }
+			};
+			if (directions.ContainsKey(dirstr))
+				return directions[dirstr];
+			else
+				return "out";
+		}
 
-			string type1 = "";
-			string type2 = "";
+
+        private string constructQueryStringAndAddVars(QueryOptionsClause clause, ref Dictionary<string,string> queryvars) {
+            string retval = "";
+            if (clause.and != null || clause.or != null ) {
+                List<QueryOptionsClause> subclauses = clause.and != null ? clause.and : clause.or ;
+                string opstr = clause.and != null ? " and " : " or ";
+                List<string> clstrs = new List<string>();
+                foreach (var subclause in subclauses) {
+                    clstrs.Add(constructQueryStringAndAddVars(subclause, ref queryvars));
+                }
+                retval = "(" + string.Join(opstr, clstrs) + ")";
+            } else {
+				string clVal = clause.val ?? "0";
+				string valStr = String.Format("$vv{0}",Helpers.GetMD5HashOfString(clVal).Substring(20));
+				string op = renderOp(clause.op);
+				string field = renderField(clause.field);
+				
+				//the timestamp values we received from the client should be unix epoch format, so convert to this format: 2006-01-02T15:04:05
+				if(field == PropsJson.LastModTime || field == PropsJson.EventTimestamp)
+					clVal = (Helpers.UnixEpochToDateTime(Convert.ToDouble(clVal))).ToString("o");
+
+				if(op == OP_TEXTSEARCH) {
+					clVal = clVal.Trim();
+					if(clVal.Length > 2) {
+						op = "regexp";
+						clVal = createRegex(clVal);
+					}
+				}
+
+				queryvars[valStr] = clVal;
+
+                retval += op +"("+field+","+valStr+")";
+            }
+            return retval;
+        }
+
+		private static string renderQueryVarsString(Dictionary<string,string> vars) {
+			List<string> tmpV = new List<string>{};
+			Dictionary<string, string>.KeyCollection keyColl = vars.Keys;
+			foreach (var key in keyColl) {
+				if(key.StartsWith("$vv"))
+					tmpV.Add(key);
+			}
+			string retval = "";
+            if(tmpV.Count > 0) {
+                retval = tmpV.Count > 1 ? String.Join(": string, ",tmpV) : tmpV[0];
+                retval += ": string";                
+            }
+			if(retval.Length > 0)
+				retval = ", "+retval;
+			return retval;
+		}
+
+		public async Task<ServerResponse> QueryWithOptionsAsync(QueryOptions opts)
+		{			
+			int recurseDepth = (int) opts.depth;
+			recurseDepth = (recurseDepth > MAX_RECURSE_DEPTH) ? MAX_RECURSE_DEPTH : ((recurseDepth < 0) ? 0 : recurseDepth);
+			
+			//dgraph expects a string of uids like this: "[0x1, 0x2, 0x3]"
+			//JsonSerializer.Serialize(uidsOfParentNodes) will quote each so the string is "[\"0x1\", \"0x2\", \"0x3\"]" 
+			//this causes a parse error in dgraphQL
+			// it seems to do its own validation but to be safe...
+			List<string>? uidsOfParentNodes = opts.rootIds;
+			uidsOfParentNodes = (uidsOfParentNodes?.Count > 0) ?  uidsOfParentNodes : new List<string>{ROOTNODE_UID};
+			List<string> sanitisedParentNodeList = new List<string>();
+			foreach (string s in uidsOfParentNodes)
+			{
+				string sanitisedUid = Helpers.SanitiseUID(s);
+				sanitisedUid = (sanitisedUid != "0x0") ? sanitisedUid : ROOTNODE_UID; //dgraph throws an exception now when trying to fetch 0x0
+				sanitisedParentNodeList.Add(sanitisedUid);
+			}
+			/*!!!!! recent versions of Dgraph don't want any square brackets around the UIDs when calling uid()
+			so it should be like this: uid(0x11,0x12,0x13)*/
+			string serialisedParentNodeList = "["+String.Join(",",sanitisedParentNodeList)+"]";
 
 			var vars = new Dictionary<string,string> { 
-				{ "$ids" , serialisedParentNodeList }, 
-				{ "$val" , val } 
-				};
-
-			if((nodeType != null) && (nodeType != ""))
-			{
-				vars["$type"] = nodeType;
-				type1 = ", $type: string";
-				type2 = "and eq(ty,$type)";
-			}
+				{ "$ids" , serialisedParentNodeList }
+			};
 
 			var query = "";
 
 			if(recurseDepth > 0)
 			{
 				vars["$rdepth"] = recurseDepth.ToString();
-				query = @"query q($ids: string, $val: string, $rdepth: int __TYPE1__) {
+				query = @"query q($ids: string, $rdepth: int __QVARS__) {
 					var(func: uid($ids)) @recurse(depth: $rdepth) 
 					{
 					  NID as uid
@@ -270,27 +363,23 @@ namespace collablio
 					qr(func: uid(NID))";
 			}
 			else{
-				query = @"query q($ids: string, $val: string __TYPE1__) {
+				query = @"query q($ids: string __QVARS__) {
 					qr(func: uid($ids))";
 			}
-			query += @"  @filter(__OP__(__FIELD__,$val)__TYPE2__)
+			query += @"  @filter(__FILTERS__)
 					{
 						uid ty l d c m e g t __B64__ out {uid} in: ~out {uid}
 					}
 				}";
 
-			query = query.Replace("__B64__",(includeBody ? "b x" : ""))
-//-----
-					.Replace("__DIRECTION__",(upwardsRecurse ? "~out" : "out"))
-//-----
-					.Replace("__OP__",op)
-					.Replace("__FIELD__",field)
-					.Replace("__TYPE1__",type1)
-					.Replace("__TYPE2__",type2);
+			query = query.Replace("__B64__",(opts.includeBody ? "b x" : ""))
+					.Replace("__DIRECTION__",renderDirection(opts.recurse))
+					.Replace("__FILTERS__",constructQueryStringAndAddVars(opts.filters, ref vars))
+					.Replace("__QVARS__",renderQueryVarsString(vars));
 			
 
 			var res = await _dbclient.NewReadOnlyTransaction().QueryWithVars(query, vars);
-			LogService.Log(LOGLEVEL.DEBUG,$"DBManager QueryAsync result:\nQuery: {query}\nvars: ids='{serialisedParentNodeList}' val='{val}'\nRes: {res}");
+			LogService.Log(LOGLEVEL.DEBUG,$"DBManager QueryAsync result:\nQuery: {query}\nvars: ids='{serialisedParentNodeList}' val='{vars}'\nRes: {res}");
 
 			if (res.IsFailed){
 				//LogService.Log(LOGLEVEL.DEBUG,"result isFailed");
@@ -305,6 +394,7 @@ namespace collablio
 		}
 
 
+
 		private ServerResponse CreateResponse(List<Node> listOfNodesFromQueryResult)
 		{
 			ServerResponse returnVal = new ServerResponse();
@@ -315,17 +405,14 @@ namespace collablio
 			}
 			return returnVal;	
 		}
-
-		private static int TX_DELETE = 0;
-		private static int TX_SET = 1;
 		
-		private async Task<Result<Response>> DoTransaction(int SetOrDelete, object ObjToSerialise, JsonSerializerOptions options)
+		private async Task<Result<Response>> DoTransaction(UpdateType SetOrDelete, object ObjToSerialise, JsonSerializerOptions options)
 		{
 			using(var txn = _dbclient.NewTransaction()) {
 				var json =  
 					JsonSerializer.Serialize(ObjToSerialise, options);
-				LogService.Log(LOGLEVEL.DEBUG,"DBManager DoTX Sending: "+json);
-				var txnResult = (SetOrDelete == TX_DELETE) ? await txn.Mutate(deleteJson : json) : await txn.Mutate(setJson : json);
+				LogService.Log(LOGLEVEL.DEBUG,$"DBManager DoTX {SetOrDelete} Sending: "+json);
+				var txnResult = (SetOrDelete == UpdateType.Delete) ? await txn.Mutate(deleteJson : json) : await txn.Mutate(setJson : json);
 
 				if(!txnResult.IsFailed)
 					await txn.Commit();
@@ -334,23 +421,6 @@ namespace collablio
 		}
 
 
-/*
-according to this https://github.com/dgraph-io/dgraph.net/tree/7c12db6034a67d78edffa563c19f217936c4375d#running-a-mutation
-you can run an upsert consisting of a query + mutation:
-
-var query = @"
-  query {
-    user as var(func: eq(email, \"wrong_email@dgraph.io\"))
-  }";
-
-var mutation = new MutationBuilder{ SetNquads = "`uid(user) <email> \"correct_email@dgraph.io\" ." };
-
-var request = new RequestBuilder{ Query = query, CommitNow = true }.withMutation(mutation);
-
-// Upsert: If wrong_email found, update the existing data
-// or else perform a new mutation.
-await txn.Mutate(request);
-*/
 		private string MakeTempKeyFromString(string s, Dictionary<string,string> _tmpkeyToGuidMap)
 		{
 			string safeID = "";
@@ -365,6 +435,64 @@ await txn.Mutate(request);
 			return $"_:{safeID}";
 		}
 		
+
+		private void storeNodeOutgoingEdgeData(
+			ref Dictionary<string,Node> oed, 
+			string srcNodeUID, 
+			string destNodeUID,
+			EdgeType etype = EdgeType.Parent) {
+
+			JustUidAndOutgoingEdges destNode = new JustUidAndOutgoingEdges(destNodeUID);
+
+			if (oed.ContainsKey(srcNodeUID)) {
+				var sn = oed[srcNodeUID];
+				switch(etype) {
+					case EdgeType.Parent:
+						if(sn?.Children == null)
+							sn.Children = new List<JustUidAndOutgoingEdges>();
+						sn?.Children?.Add(destNode);
+						break;
+					case EdgeType.Link:
+						if(sn?.OutLinks == null)
+							sn.OutLinks = new List<JustUidAndOutgoingEdges>();
+						sn?.OutLinks?.Add(destNode);
+						break;
+					default:
+						break;
+				}
+			}
+			else {
+				Node srcNode = new Node { 
+					UID = srcNodeUID 
+				};
+
+				List<JustUidAndOutgoingEdges> ldst = new List<JustUidAndOutgoingEdges> { destNode };
+				switch(etype) {
+					case EdgeType.Parent:
+						srcNode.Children = ldst;
+						break;
+					case EdgeType.Link:
+						srcNode.OutLinks = ldst;
+						break;
+					default:
+						break;
+				}
+
+				oed[srcNodeUID] = srcNode;
+			}
+		}
+
+		private void maybeFixNodeTmpUID(JustUidAndOutgoingEdges n, ref Dictionary<string,string> tmpkeyToGuidMap){
+			//the node UID must be 0xNN or a valid tempkey
+			//regex match 0xNN and if not, then prepend _:id
+			//this will allow a collablio client to do a node tree upsert
+			//some user supplied tmpkeys are causing parsing errors, so replace all with guids
+			string id = n.UID?.Trim();
+			if (!rgx_uid.IsMatch(id.ToLower()))
+				n.UID = MakeTempKeyFromString(id,tmpkeyToGuidMap);
+
+		}
+
 		//create nodes and optionally link to parent or children
 		public async Task<List<string>> UpsertNodesAsync(List<Node> nodeList)//, List<string> parentUids = null, List<string> childUids = null) 
 		{
@@ -386,8 +514,6 @@ await txn.Mutate(request);
 			//   create the "parent -> node edge" objs using empty Node (just set UID), 
 			
 			List<string> returnNewUIDs = new List<string>();
-
-			Regex rgx = new Regex(@"^0x[0-9a-f]+$");
 			
 			//guid lookup table
 			Dictionary<string,string> tmpkeyToGuidMap = new Dictionary<string,string>();
@@ -395,55 +521,60 @@ await txn.Mutate(request);
 			int count = 0;
 			foreach (Node n in nodeList)
 			{
-				string id = n.UID?.Trim();
-				if("" == (id ?? "")) 
+				if("" == (n.UID?.Trim() ?? "")) 
 				{
 					n.UID = MakeTempKeyFromString($"u{count}",tmpkeyToGuidMap);
 					count++;
 				}
 				else 
 				{
-					//regex match 0xNN and if not, then prepend _:id
-					//this will allow client to do a node tree upsert
-					//some user supplied tmpkeys are causing parsing errors, so replace all with guids
-					if (!rgx.IsMatch(id.ToLower()))
-					{
-						n.UID = MakeTempKeyFromString(id,tmpkeyToGuidMap);
-					}
+					maybeFixNodeTmpUID(n, ref tmpkeyToGuidMap);
 				}
 			}
 			
 			HashSet<string> nodesBeingUpserted = new HashSet<string>();
 			HashSet<string> nodesThatHaveParents = new HashSet<string>();
-			
-			List<Node> nodesPlusEdges = new List<Node>(nodeList);
+			Dictionary<string,Node> outgoingEdgeData = new Dictionary<string,Node>();
+
 			foreach (Node n in nodeList)
 			{
-				if(n.Parents != null && n.Parents.Count > 0)
+				if(n.Parents?.Count > 0)
 				{
 					foreach (var parent in n.Parents)
 					{
-						//the parentUID must be 0xNN or a valid tempkey
-						string id = parent.UID?.Trim();
-						if (!rgx.IsMatch(id.ToLower()))
-							parent.UID = MakeTempKeyFromString(id,tmpkeyToGuidMap);
-
-						nodesPlusEdges.Add(new Node { UID = parent.UID, Children = new List<NodeWithUidAndChildren> { new NodeWithUidAndChildren { UID = n.UID } } });
+						maybeFixNodeTmpUID(parent, ref tmpkeyToGuidMap);
+						storeNodeOutgoingEdgeData(ref outgoingEdgeData, parent.UID, n.UID);
 					}
 					nodesThatHaveParents.Add(n.UID);
 				}
-				//child edges will be retained in the node during upsert, so dont need to create them
+				//children edges will be retained in the node during upsert, so dont need to create them
 				//need to make their tmpkeys safe and record that the children are linkedTo for the later check that parents unlinked nodes to the root node
-				if(n.Children != null && n.Children.Count > 0)
+				if(n.Children?.Count > 0)
 				{
 					foreach (var child in n.Children)
 					{
-						//the parentUID must be 0xNN or a valid tempkey
-						string id = child.UID?.Trim();
-						if (!rgx.IsMatch(id.ToLower()))
-							child.UID = MakeTempKeyFromString(id,tmpkeyToGuidMap);
-
+						maybeFixNodeTmpUID(child, ref tmpkeyToGuidMap);
 						nodesThatHaveParents.Add(child.UID);
+					}
+				}
+
+				if(n.InLinks?.Count > 0)
+				{
+					foreach (var inlink in n.InLinks)
+					{
+						maybeFixNodeTmpUID(inlink, ref tmpkeyToGuidMap);
+						storeNodeOutgoingEdgeData(ref outgoingEdgeData, inlink.UID, n.UID);
+					}
+					nodesThatHaveParents.Add(n.UID);
+				}
+				//outlinks edges will be retained in the node during upsert, so dont need to create them
+				//need to make their tmpkeys safe and record that the children are linkedTo for the later check that parents unlinked nodes to the root node
+				if(n.OutLinks?.Count > 0)
+				{
+					foreach (var outlink in n.OutLinks)
+					{
+						maybeFixNodeTmpUID(outlink, ref tmpkeyToGuidMap);
+						nodesThatHaveParents.Add(outlink.UID);
 					}
 				}
 
@@ -451,6 +582,7 @@ await txn.Mutate(request);
 				// because the Parents property is an alias for ~out when the Node is retrieved from the DB
 				//and update the lastModTime
 				n.Parents = null;
+				n.InLinks = null;
 				n.SetLastModTimeToNow();
 				nodesBeingUpserted.Add(n.UID);
 				
@@ -461,10 +593,14 @@ await txn.Mutate(request);
 			foreach (var n in nodesBeingUpserted)
 				if(n.StartsWith("_:"))//set the parentUID to the ROOTNODE_UID !!except if it *is* the root node (the root node will never start with _:)
 				{
-					nodesPlusEdges.Add(new Node { UID = ROOTNODE_UID, Children = new List<NodeWithUidAndChildren> { new NodeWithUidAndChildren { UID = n } } });
+					storeNodeOutgoingEdgeData(ref outgoingEdgeData, ROOTNODE_UID, n);
 				}
 			
-			var transactionResult = await DoTransaction(TX_SET, nodesPlusEdges, jsonSerialiseIgnoreNull);
+			List<Node> nodesPlusEdges = new List<Node>(nodeList);
+			foreach(var kvpair in outgoingEdgeData)
+    			nodesPlusEdges.Add(kvpair.Value);
+			
+			var transactionResult = await DoTransaction(UpdateType.Add, nodesPlusEdges, jsonSerialiseIgnoreNull);
 			LogService.Log(LOGLEVEL.DEBUG,"DBManager UpsertNodesAsync Result: "+transactionResult.ToString());
 			foreach (var n in nodeList)
 			{
@@ -476,15 +612,96 @@ await txn.Mutate(request);
 			return returnNewUIDs;
 		}		
 		
-		//TODO:
-		//Delete should maybe only be executed by the backend.
-		// instead of permanent delete requests from client, just link them to the recyclebin??
-		//delete nodes (recursivedelete = true)
-		//1 query first to get node's parents
-		//2 unlink node from its parents
-		//3 recursive query to get uids of node's children
-		//4 delete nodes
 		
+		private void AddIncomingEdges(
+			List<string> nodeUids, 
+			List<string> incomingUids, 
+			List<JustUidAndOutgoingEdges> mutateList, 
+			EdgeType etype = EdgeType.Parent,
+			bool updateLastModTime = true)
+		{
+			if(incomingUids != null && incomingUids.Count > 0)
+			{
+				List<JustUidAndOutgoingEdges> cList = new List<JustUidAndOutgoingEdges>();
+				foreach (var nodeUid in nodeUids)
+					cList.Add(new JustUidAndOutgoingEdges(uid: nodeUid, initialiseTime: updateLastModTime));
+
+				foreach (var parentUid in incomingUids)
+				{
+					JustUidAndOutgoingEdges tmpN = new JustUidAndOutgoingEdges ( 
+						uid: parentUid, 
+						initialiseTime: updateLastModTime
+						);
+					switch(etype){
+						case EdgeType.Parent:
+							tmpN.Children = cList;
+							break;
+						case EdgeType.Link:
+							tmpN.OutLinks = cList;
+							break;
+						default:
+							break;
+					}
+					mutateList.Add(tmpN);						
+				}
+			}	
+		}
+
+		private void AddOutgoingEdges(
+			List<string> nodeUids, 
+			List<string> outgoingUids, 
+			List<JustUidAndOutgoingEdges> mutateList, 
+			EdgeType etype = EdgeType.Parent,
+			bool updateLastModTime = true)
+		{
+			if(outgoingUids != null && outgoingUids.Count > 0)
+			{
+				List<JustUidAndOutgoingEdges> cList = new List<JustUidAndOutgoingEdges>();
+				foreach (var outUid in outgoingUids)
+					cList.Add(new JustUidAndOutgoingEdges(uid: outUid, initialiseTime: updateLastModTime));
+
+				foreach (var nodeUid in nodeUids)
+				{
+					JustUidAndOutgoingEdges tmpN = new JustUidAndOutgoingEdges ( 
+						uid: nodeUid, 
+						initialiseTime: updateLastModTime
+						);
+					switch(etype){
+						case EdgeType.Parent:
+							tmpN.Children = cList;
+							break;
+						case EdgeType.Link:
+							tmpN.OutLinks = cList;
+							break;
+						default:
+							break;
+					}
+					mutateList.Add(tmpN);						
+				}
+			}	
+		}
+
+		private void OriginalAddOutgoingEdges(
+			List<string> nodeUids, 
+			List<string> childUids, 
+			List<JustUidAndOutgoingEdges> mutateList, 
+			EdgeType etype = EdgeType.Parent,
+			bool updateLastModTime = true)
+		{
+			if(childUids != null && childUids.Count > 0)
+				foreach (var nodeUid in nodeUids)
+				{
+					foreach (var childUid in childUids)
+						mutateList.Add(new JustUidAndOutgoingEdges ( 
+							uid: nodeUid, 
+							children: new List<JustUidAndOutgoingEdges> { new JustUidAndOutgoingEdges(uid: childUid, initialiseTime: updateLastModTime) },
+							initialiseTime: updateLastModTime
+							) 
+						);
+				}
+		}
+
+
 		//link node
 		/*
 
@@ -505,51 +722,7 @@ await txn.Mutate(request);
 
 		List<NodeWithUidAndChildren>
 		*/
-		
-		private void AddParentToNodeEdges(List<string> nodeUids, List<string> parentUids, List<NodeWithUidAndChildren> mutateList, bool updateLastModTime = true)
-		{
-			if(parentUids != null && parentUids.Count > 0)
-				foreach (var nodeUid in nodeUids)
-				{
-					foreach (var parentUid in parentUids)
-						mutateList.Add(new NodeWithUidAndChildren ( 
-							parentUid, 
-							new List<NodeWithUid> { new NodeWithUid(nodeUid, updateLastModTime) },
-							updateLastModTime
-							)
-						);
-				}
-		}
 
-		private void AddNodeToChildEdges(List<string> nodeUids, List<string> childUids, List<NodeWithUidAndChildren> mutateList, bool updateLastModTime = true)
-		{
-			if(childUids != null && childUids.Count > 0)
-				foreach (var nodeUid in nodeUids)
-				{
-					foreach (var childUid in childUids)
-						mutateList.Add(new NodeWithUidAndChildren ( 
-							nodeUid, 
-							new List<NodeWithUid> { new NodeWithUid(childUid, updateLastModTime) },
-							updateLastModTime
-							) 
-						);
-				}
-		}
-		
-		public async Task<ServerResponse> LinkNodesAsync(List<string> nodeUids, List<string> parentUids = null, List<string> childUids = null)
-		{
-			List<NodeWithUidAndChildren> setList = new List<NodeWithUidAndChildren>();
-
-			AddParentToNodeEdges(nodeUids, parentUids, setList);
-			AddNodeToChildEdges(nodeUids, childUids, setList);
-
-			var transactionResult = await DoTransaction(TX_SET, setList, jsonSerialiseIgnoreNull);
-			LogService.Log(LOGLEVEL.DEBUG,"DBManager LinkNodesAsync Result: "+transactionResult.ToString());
-			return new ServerResponse { message = ((transactionResult.IsFailed) ? "An Error Occurred" : "Update Success") , error = transactionResult.IsFailed};
-		}
-		
-		
-		
 		//unlink node
 		/*
 
@@ -571,37 +744,90 @@ await txn.Mutate(request);
 		List<NodeWithUidAndChildren>
 		deleteJson : json
 		*/
-		
-		
-		public async Task<ServerResponse> UnlinkNodesAsync(List<string> nodeUids, List<string> parentUids = null, List<string> childUids = null)
-		{
-			List<NodeWithUidAndChildren> deleteList = new List<NodeWithUidAndChildren>();
-			AddParentToNodeEdges(nodeUids, parentUids, deleteList, false);
-			AddNodeToChildEdges(nodeUids, childUids, deleteList, false);
 
-			var transactionResult = await DoTransaction(TX_DELETE, deleteList, jsonSerialiseIgnoreNull);//lastmodtime was null, jsonSerialiseOptions);
-			LogService.Log(LOGLEVEL.DEBUG,"DBManager UnLinkNodesAsync (delete) Result: "+transactionResult.ToString());
+
+		private async Task<ServerResponse> UpdateEdgesAsync(
+			UpdateType utype,
+			List<string> nodeUids, 
+			List<string> srcUids = null, 
+			List<string> destUids = null,
+			EdgeType etype = EdgeType.Parent
+			)
+		{
+			List<JustUidAndOutgoingEdges> updateList = new List<JustUidAndOutgoingEdges>();
+
+			AddIncomingEdges(nodeUids, srcUids, updateList, etype);
+			AddOutgoingEdges(nodeUids, destUids, updateList, etype);
+
+			var transactionResult = await DoTransaction(utype, updateList, jsonSerialiseIgnoreNull);
+			LogService.Log(LOGLEVEL.DEBUG,"DBManager UpdateEdgesAsync Result: "+transactionResult.ToString());
 
 			// delete doesn't update any fields, so have to do another mutate TX to update the lastModTime for each of the nodes
-			List<NodeWithUidAndChildren> setList = new List<NodeWithUidAndChildren>();
-			foreach (var _uid in nodeUids)
-				setList.Add(new NodeWithUidAndChildren(uid: _uid, initialiseTime: true) );
-			if(parentUids != null && parentUids.Count > 0)
-				foreach (var _uid in parentUids)
-					setList.Add(new NodeWithUidAndChildren(uid: _uid, initialiseTime: true) );
-			if(childUids != null && childUids.Count > 0)
-				foreach (var _uid in childUids)
-					setList.Add(new NodeWithUidAndChildren(uid: _uid, initialiseTime: true) );
+			if(utype == UpdateType.Delete)
+			{
+				List<JustUidAndOutgoingEdges> setList = new List<JustUidAndOutgoingEdges>();
+				foreach (var _uid in nodeUids)
+					setList.Add(new JustUidAndOutgoingEdges(uid: _uid, initialiseTime: true) );
+				if(srcUids?.Count > 0)
+					foreach (var _uid in srcUids)
+						setList.Add(new JustUidAndOutgoingEdges(uid: _uid, initialiseTime: true) );
+				if(destUids?.Count > 0)
+					foreach (var _uid in destUids)
+						setList.Add(new JustUidAndOutgoingEdges(uid: _uid, initialiseTime: true) );
 
-			transactionResult = await DoTransaction(TX_SET, setList, jsonSerialiseIgnoreNull);
-			LogService.Log(LOGLEVEL.DEBUG,"DBManager UnLinkNodesAsync (set) Result: "+transactionResult.ToString());
+				transactionResult = await DoTransaction(UpdateType.Add, setList, jsonSerialiseIgnoreNull);
+				LogService.Log(LOGLEVEL.DEBUG,"DBManager UpdateEdgesAsync (set lastmod) Result: "+transactionResult.ToString());
+			}
+
 			return new ServerResponse { message = ((transactionResult.IsFailed) ? "An Error Occurred" : "Update Success") , error = transactionResult.IsFailed};
 		}
 
+		public async Task<ServerResponse> AddParentChildRelationsAsync(List<string> nodeUids, List<string> parentUids = null, List<string> childUids = null)
+		{
+			return await UpdateEdgesAsync(
+				utype: UpdateType.Add,
+				nodeUids: nodeUids, 
+				srcUids: parentUids, 
+				destUids: childUids,
+				etype: EdgeType.Parent
+			);
+		}
 
+		public async Task<ServerResponse> RemoveParentChildRelationsAsync(List<string> nodeUids, List<string> parentUids = null, List<string> childUids = null)
+		{
+			return await UpdateEdgesAsync(
+				utype: UpdateType.Delete,
+				nodeUids: nodeUids, 
+				srcUids: parentUids, 
+				destUids: childUids,
+				etype: EdgeType.Parent
+			);
+		}
 
+		public async Task<ServerResponse> AddLinkRelationsAsync(List<string> nodeUids, List<string> srcUids = null, List<string> destUids = null)
+		{
+			return await UpdateEdgesAsync(
+				utype: UpdateType.Add,
+				nodeUids: nodeUids, 
+				srcUids: srcUids, 
+				destUids: destUids,
+				etype: EdgeType.Link
+			);
+		}
 
+		public async Task<ServerResponse> RemoveLinkRelationsAsync(List<string> nodeUids, List<string> srcUids = null, List<string> destUids = null)
+		{
+			return await UpdateEdgesAsync(
+				utype: UpdateType.Delete,
+				nodeUids: nodeUids, 
+				srcUids: srcUids, 
+				destUids: destUids,
+				etype: EdgeType.Link
+			);
+		}
 
+		
+		
 		public async Task<User> QueryUserAsync(string username)
 		{
 
@@ -621,14 +847,19 @@ await txn.Mutate(request);
 				return null;
 			}
 			
-			Console.Write(res.Value.Json);
-
 			QueryResultUser queryResult = JsonSerializer.Deserialize<QueryResultUser>(res.Value.Json);
-
 			User u = queryResult.qr.Count > 0 ? queryResult.qr[0] : null;
-
 			return u;
 		}
+
+		//TODO:
+		//Delete() -> which should maybe only be executed by the backend.
+		// instead of permanent delete requests from client, just link them to the recyclebin??
+		//delete nodes (recursivedelete = true)
+		//1 query first to get node's parents
+		//2 unlink node from its parents
+		//3 recursive query to get uids of node's children
+		//4 delete nodes
 
 
     }
