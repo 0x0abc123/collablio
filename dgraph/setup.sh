@@ -1,17 +1,5 @@
 #!/bin/bash
-
-
-if [[ -z $(docker image ls | grep 'dgraph/standalone') ]]
-then 
-	echo "running: docker pull dgraph/standalone:v20.11.3"
-	docker pull dgraph/standalone:v20.11.3
-fi
-
-echo "starting up dgraph docker standalone"
-bash ./run.sh
-echo "waiting for dgraph to start..."
-sleep 30
-
+# assume dgraph standalone has been started
 echo "setting up database schema..."
 
 curl "http://127.0.0.1:8080/alter" -XPOST -d $'

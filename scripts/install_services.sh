@@ -28,7 +28,7 @@ then
         PKG_URL="https://packages.microsoft.com/config/debian/${OPT_DEBIAN}/packages-microsoft-prod.deb"
         wget  "$PKG_URL" -O /tmp/packages-microsoft-prod.deb
 	dpkg -i /tmp/packages-microsoft-prod.deb
-	apt-get update &&  apt-get install -y apt-transport-https && apt-get update && apt-get install -y dotnet-sdk-3.1
+	apt-get update &&  apt-get install -y apt-transport-https && apt-get update && apt-get install -y dotnet-sdk-6.0
 
     else
         echo "This installer script only supports Debian 10-12, exiting..."
@@ -101,7 +101,8 @@ Requires=docker.service
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/docker run --rm -p 127.0.0.1:8080:8080 -p 127.0.0.1:9080:9080 -p 127.0.0.1:8000:8000 -v /dgraph:/dgraph dgraph/standalone:v20.11.3
+ExecStart=/bin/bash -c 'rm /tmp/ddgcid5f5; /usr/bin/docker run --rm -p 127.0.0.1:8080:8080 -p 127.0.0.1:9080:9080 -p 127.0.0.1:8000:8000 -v /dgraph:/dgraph --cidfile /tmp/ddgcid5f5 dgraph/standalone:v21.12.0'
+ExecStop=/bin/bash -c '/usr/bin/docker stop $(cat /tmp/ddgcid5f5)'
 Restart=on-failure
 
 [Install]

@@ -43,7 +43,7 @@ namespace collablio
 		public string recurse { get; set; } = "out";
 		public uint depth { get; set; } = 0;
 		public QueryOptionsClause? filters { get; set; }
-		public bool includeBody { get; set; } = false;
+		public List<string>? select { get; set; }
 	}
 
 	//////////////////////////////////////////////////////
@@ -206,8 +206,10 @@ namespace collablio
 			QueryOptions qo = new QueryOptions();
 			qo.rootIds = uidsOfParentNodes;
 			qo.depth = (uint)recurseDepth;
-			qo.includeBody = includeBody;
 			qo.recurse = (upwardsRecurse) ? "outinv" : "out";
+			qo.select = new List<string> {"l","d","c","m","in","out","ty"};
+			if(includeBody)
+				qo.select.Add("body");
 			
 			QueryOptionsClause tmpCl = new QueryOptionsClause();
 			tmpCl.field = field ?? PropsJson.LastModTime;
@@ -322,6 +324,36 @@ namespace collablio
 			return retval;
 		}
 
+		private static Dictionary<string, string> allowedFields = new Dictionary<string, string> { 
+			 {"ty","ty"},
+			 {"l","l"},
+			 {"d","d"},
+			 {"c","c"},
+			 {"m","m"},
+			 {"e","e"},
+			 {"t","t"},
+			 {"body","b x"},
+			 {"in","in: ~out {uid}"},
+			 {"out","out {uid}"},
+			 {"inl","inl: ~lnk {uid}"},
+			 {"lnk","lnk {uid}"}
+			};
+
+		private static string renderFields(List<string> fields) {
+			List<string> tmpV = new List<string>{};
+			foreach(var field in fields){
+				if(allowedFields.ContainsKey(field)){
+					tmpV.Add(allowedFields[field]);
+				}
+			}
+			string retval = "";
+            if(tmpV.Count > 0) {
+                retval = tmpV.Count > 1 ? String.Join(" ",tmpV) : tmpV[0];
+            }
+			return retval;
+		}
+
+
 		public async Task<ServerResponse> QueryWithOptionsAsync(QueryOptions opts)
 		{			
 			int recurseDepth = (int) opts.depth;
@@ -368,11 +400,11 @@ namespace collablio
 			}
 			query += @"  @filter(__FILTERS__)
 					{
-						uid ty l d c m e g t __B64__ out {uid} in: ~out {uid}
+						uid __FIELDS__
 					}
 				}";
 
-			query = query.Replace("__B64__",(opts.includeBody ? "b x" : ""))
+			query = query.Replace("__FIELDS__",(opts.select?.Count > 0 ? renderFields(opts.select) : ""))
 					.Replace("__DIRECTION__",renderDirection(opts.recurse))
 					.Replace("__FILTERS__",constructQueryStringAndAddVars(opts.filters, ref vars))
 					.Replace("__QVARS__",renderQueryVarsString(vars));
@@ -385,8 +417,6 @@ namespace collablio
 				//LogService.Log(LOGLEVEL.DEBUG,"result isFailed");
 				return null;
 			}
-			
-			Console.Write(res.Value.Json);
 
 			QueryResultNodes queryResult = JsonSerializer.Deserialize<QueryResultNodes>(res.Value.Json, jsonDeserialiseOptions);
 

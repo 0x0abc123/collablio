@@ -1,4 +1,9 @@
 #!/bin/bash
+if [ ! "$(which xxd)" ]
+then
+    echo xxd is not installed, please install with \"apt install xxd\" and re-run this tool
+fi
+
 echo -n "Enter Username: "
 read USERNAME
 while true

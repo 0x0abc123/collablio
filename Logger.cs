@@ -7,16 +7,22 @@ using System.Collections.Generic;
 namespace collablio
 {
 	public enum LOGLEVEL {
-		DEBUG = 0,
-		INFO = 1,
-		WARN = 2,
-		ERROR = 3
+		DEBUG = 1,
+		INFO = 2,
+		WARN = 3,
+		ERROR = 4
 	}
 	
     public class LogService
     {
+		private static ConfigManager confmgr = ConfigManager.Instance();
+		static int loglevelconfig = Int32.Parse(confmgr.GetValue("loglevel"));
+		
 		public static void Log(LOGLEVEL level, string message)
 		{
+			if(loglevelconfig > (int)level)
+				return;
+
 			List<string> lookup = new List<string> {
 			"debug",
 			"info",

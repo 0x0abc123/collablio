@@ -10,16 +10,19 @@ namespace collablio
     class Program
     {
 		private static ConfigManager confmgr = ConfigManager.Instance();
+
         static void Main(string[] args)
         {			
 			// start up the Kestrel web service
 			string webRoot = Path.Combine(AppContext.BaseDirectory, "../../../wwwroot");
+			int loglevelconfig = Int32.Parse(confmgr.GetValue("loglevel"));
 			LogService.Log(LOGLEVEL.DEBUG,"webroot: "+webRoot);
 
 			var host = new WebHostBuilder()
                 .UseKestrel()
 				.ConfigureLogging(logging =>
 				{
+					logging.SetMinimumLevel((LogLevel)loglevelconfig);
 					logging.ClearProviders();
 					logging.AddConsole();
 				})

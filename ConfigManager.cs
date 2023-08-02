@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -11,7 +12,8 @@ namespace collablio
     {
         Dictionary<string,string> defaults = new Dictionary<string,string> { 
             { "listenurl", "http://127.0.0.1:5000" },
-            { "sessiontimeout" , "120" }
+            { "sessiontimeout" , "120" },
+			{ "loglevel" , "3" }
         };
 
 		private static ConfigManager _singleton = null;
@@ -20,7 +22,8 @@ namespace collablio
 			if(_singleton == null)
 			{
 				_singleton = new ConfigManager();
-				Task.Run(() => _singleton.Initialise()).Wait();
+				_singleton.Initialise();
+				//Task.Run(() => _singleton.Initialise()).Wait();
 			}
 			return _singleton;			
 		}
@@ -31,7 +34,7 @@ namespace collablio
 
         private static Dictionary<string, object> _conf = new Dictionary<string, object>();
 
-		private async Task Initialise()
+		private void Initialise()
 		{
 			string cdir = Directory.GetCurrentDirectory();
             string conffile = Path.Combine(cdir,"config.json");
@@ -39,10 +42,9 @@ namespace collablio
                 string jsonstr = File.ReadAllText(conffile);
                 Dictionary<string, object> confdict = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonstr);
                 _conf = confdict;
-                LogService.Log(LOGLEVEL.DEBUG,$"ConfigManager: loaded {confdict}");
             }
             catch (IOException e) {
-                LogService.Log(LOGLEVEL.DEBUG,$"ConfigManager: failed to open file {conffile}");
+                Console.WriteLine($"ConfigManager: failed to open file {conffile}");
             }
 
 		}
