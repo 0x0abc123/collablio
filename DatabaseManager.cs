@@ -250,6 +250,7 @@ namespace collablio
 				PropsJson.Detail,
 				PropsJson.CustomData,
 				PropsJson.TextData,
+				PropsJson.Type,
 				PropsJson.B64Data
 			};
 			if(!allowedFields.Contains(field))
@@ -411,7 +412,7 @@ namespace collablio
 			
 
 			var res = await _dbclient.NewReadOnlyTransaction().QueryWithVars(query, vars);
-			LogService.Log(LOGLEVEL.DEBUG,$"DBManager QueryAsync result:\nQuery: {query}\nvars: ids='{serialisedParentNodeList}' val='{vars}'\nRes: {res}");
+			LogService.Log(LOGLEVEL.DEBUG,$"DBManager QueryAsync result:\nQuery: {query}\nvars: ids='{serialisedParentNodeList}' val='{JsonSerializer.Serialize(vars)}'\nRes: {res}");
 
 			if (res.IsFailed){
 				//LogService.Log(LOGLEVEL.DEBUG,"result isFailed");

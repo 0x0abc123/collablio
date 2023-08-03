@@ -22,6 +22,8 @@ namespace collablio.Models
 		public static string DgraphType = "DgraphType";
 		public static string Parents = "Parents";
 		public static string Children = "Children";
+		public static string InLinks = "InLinks";
+		public static string OutLinks = "OutLinks";
 	}
 
 	public class PropsJson
@@ -40,6 +42,8 @@ namespace collablio.Models
 		public static string DgraphType = "dgraph.type";
 		public static string Parents = "in";
 		public static string Children = "out";
+		public static string InLinks = "inl";
+		public static string OutLinks = "lnk";
 	}
 
 	public class NodeJsonNamingPolicy : JsonNamingPolicy
@@ -60,6 +64,8 @@ namespace collablio.Models
 			{ PropsJson.DgraphType, PropsInternal.DgraphType },
 			{ PropsJson.Parents, PropsInternal.Parents },
 			{ PropsJson.Children, PropsInternal.Children },
+			{ PropsJson.InLinks, PropsInternal.InLinks },
+			{ PropsJson.OutLinks, PropsInternal.OutLinks },
 
 			// internal naming -> json
 			{ PropsInternal.UID, PropsJson.UID },
@@ -75,6 +81,8 @@ namespace collablio.Models
 			{ PropsInternal.DgraphType, PropsJson.DgraphType },
 			{ PropsInternal.Parents, PropsJson.Parents },
 			{ PropsInternal.Children, PropsJson.Children },
+			{ PropsInternal.InLinks, PropsJson.InLinks },
+			{ PropsInternal.OutLinks, PropsJson.OutLinks },
 
 		};
 		
