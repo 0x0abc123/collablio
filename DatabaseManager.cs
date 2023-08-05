@@ -8,7 +8,7 @@ using Grpc.Net.Client;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using collablio.Models;
-//using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 //using Grpc.Core;
 //using System.Text;
 //using System.Linq;
@@ -121,14 +121,16 @@ namespace collablio
 			jsonSerialiseIgnoreNull = new JsonSerializerOptions
 					{
 						PropertyNamingPolicy = new NodeJsonNamingPolicy(),
-						IgnoreNullValues = true,
+						//IgnoreNullValues = true,
+						DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
 						IgnoreReadOnlyProperties = false
 					};
 
 			jsonDeserialiseOptions = new JsonSerializerOptions
 					{
 						PropertyNamingPolicy = new NodeJsonNamingPolicy(),
-						IgnoreNullValues = true,
+						//IgnoreNullValues = true,
+						DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
 						IgnoreReadOnlyProperties = false
 					};
 		}

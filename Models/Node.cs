@@ -6,6 +6,7 @@ using System.Linq;
 
 namespace collablio.Models
 {
+	// we can refactor this using [JsonPropertyName("propertyName")]
 	public class PropsInternal
 	{
 		// the strings need to match the property names of the Node class
