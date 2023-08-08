@@ -124,6 +124,18 @@ namespace collablio.Controllers
 			return Ok(JsonSerialize(uids));
         }
 
+        [Authorize]
+		[HttpPost]
+        [Route("upsert/dcg")]
+        public async Task<IActionResult> UpsertNodesPostDCG(List<Node> nodeList)
+        {
+			//the upsertNode route should nullify the B64Data field (it should only be set via the file upload route PostUploadFile
+			foreach (Node n in nodeList)
+				n.B64Data = null;
+			List<string> uids = await dbmgr.UpsertNodesAsync(nodeList, true);
+			return Ok(JsonSerialize(uids));
+        }
+
 		public class LinkNodesPostData
 		{
 			public List<string>? nodes {get; set;}

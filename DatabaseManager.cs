@@ -40,6 +40,7 @@ namespace collablio
 	public class QueryOptions
 	{
 		public List<string>? rootIds { get; set; }
+		public QueryOptionsClause? rootQuery { get; set; } //if present, then ignore rootIds, recurse and depth
 		public string recurse { get; set; } = "out";
 		public uint depth { get; set; } = 0;
 		public QueryOptionsClause? filters { get; set; }
@@ -322,8 +323,6 @@ namespace collablio
                 retval = tmpV.Count > 1 ? String.Join(": string, ",tmpV) : tmpV[0];
                 retval += ": string";                
             }
-			if(retval.Length > 0)
-				retval = ", "+retval;
 			return retval;
 		}
 
@@ -359,47 +358,56 @@ namespace collablio
 
 		public async Task<ServerResponse> QueryWithOptionsAsync(QueryOptions opts)
 		{			
-			int recurseDepth = (int) opts.depth;
-			recurseDepth = (recurseDepth > MAX_RECURSE_DEPTH) ? MAX_RECURSE_DEPTH : ((recurseDepth < 0) ? 0 : recurseDepth);
-			
-			//dgraph expects a string of uids like this: "[0x1, 0x2, 0x3]"
-			//JsonSerializer.Serialize(uidsOfParentNodes) will quote each so the string is "[\"0x1\", \"0x2\", \"0x3\"]" 
-			//this causes a parse error in dgraphQL
-			// it seems to do its own validation but to be safe...
-			List<string>? uidsOfParentNodes = opts.rootIds;
-			uidsOfParentNodes = (uidsOfParentNodes?.Count > 0) ?  uidsOfParentNodes : new List<string>{ROOTNODE_UID};
-			List<string> sanitisedParentNodeList = new List<string>();
-			foreach (string s in uidsOfParentNodes)
-			{
-				string sanitisedUid = Helpers.SanitiseUID(s);
-				sanitisedUid = (sanitisedUid != "0x0") ? sanitisedUid : ROOTNODE_UID; //dgraph throws an exception now when trying to fetch 0x0
-				sanitisedParentNodeList.Add(sanitisedUid);
-			}
-			/*!!!!! recent versions of Dgraph don't want any square brackets around the UIDs when calling uid()
-			so it should be like this: uid(0x11,0x12,0x13)*/
-			string serialisedParentNodeList = "["+String.Join(",",sanitisedParentNodeList)+"]";
-
-			var vars = new Dictionary<string,string> { 
-				{ "$ids" , serialisedParentNodeList }
-			};
-
 			var query = "";
-
-			if(recurseDepth > 0)
+			var vars = new Dictionary<string,string>();
+			bool isRootQuery = (opts.rootQuery != null);
+			
+			if(isRootQuery)
 			{
-				vars["$rdepth"] = recurseDepth.ToString();
-				query = @"query q($ids: string, $rdepth: int __QVARS__) {
-					var(func: uid($ids)) @recurse(depth: $rdepth) 
-					{
-					  NID as uid
-					  __DIRECTION__
-					}
-				  
-					qr(func: uid(NID))";
+				query = @"query q(__QVARS__) {
+					qr(func: __ROOTQUERY__)";
+				query = query.Replace("__ROOTQUERY__",constructQueryStringAndAddVars(opts.rootQuery, ref vars));
 			}
-			else{
-				query = @"query q($ids: string __QVARS__) {
-					qr(func: uid($ids))";
+			else
+			{
+				int recurseDepth = (int) opts.depth;
+				recurseDepth = (recurseDepth > MAX_RECURSE_DEPTH) ? MAX_RECURSE_DEPTH : ((recurseDepth < 0) ? 0 : recurseDepth);
+				
+				//dgraph expects a string of uids like this: "[0x1, 0x2, 0x3]"
+				//JsonSerializer.Serialize(uidsOfParentNodes) will quote each so the string is "[\"0x1\", \"0x2\", \"0x3\"]" 
+				//this causes a parse error in dgraphQL
+				// it seems to do its own validation but to be safe...
+				List<string>? uidsOfParentNodes = opts.rootIds;
+				uidsOfParentNodes = (uidsOfParentNodes?.Count > 0) ?  uidsOfParentNodes : new List<string>{ROOTNODE_UID};
+				List<string> sanitisedParentNodeList = new List<string>();
+				foreach (string s in uidsOfParentNodes)
+				{
+					string sanitisedUid = Helpers.SanitiseUID(s);
+					sanitisedUid = (sanitisedUid != "0x0") ? sanitisedUid : ROOTNODE_UID; //dgraph throws an exception now when trying to fetch 0x0
+					sanitisedParentNodeList.Add(sanitisedUid);
+				}
+				/*!!!!! recent versions of Dgraph don't want any square brackets around the UIDs when calling uid()
+				so it should be like this: uid(0x11,0x12,0x13)*/
+				string serialisedParentNodeList = "["+String.Join(",",sanitisedParentNodeList)+"]";
+
+				vars["$ids"] = serialisedParentNodeList;
+
+				if(recurseDepth > 0)
+				{
+					vars["$rdepth"] = recurseDepth.ToString();
+					query = @"query q($ids: string, $rdepth: int, __QVARS__) {
+						var(func: uid($ids)) @recurse(depth: $rdepth) 
+						{
+						  NID as uid
+						  __DIRECTION__
+						}
+					  
+						qr(func: uid(NID))";
+				}
+				else{
+					query = @"query q($ids: string, __QVARS__) {
+						qr(func: uid($ids))";
+				}
 			}
 			query += @"  @filter(__FILTERS__)
 					{
@@ -414,7 +422,7 @@ namespace collablio
 			
 
 			var res = await _dbclient.NewReadOnlyTransaction().QueryWithVars(query, vars);
-			LogService.Log(LOGLEVEL.DEBUG,$"DBManager QueryAsync result:\nQuery: {query}\nvars: ids='{serialisedParentNodeList}' val='{JsonSerializer.Serialize(vars)}'\nRes: {res}");
+			LogService.Log(LOGLEVEL.DEBUG,$"DBManager QueryAsync result:\nQuery: {query}\nvars: '{JsonSerializer.Serialize(vars)}'\nRes: {res}");
 
 			if (res.IsFailed){
 				//LogService.Log(LOGLEVEL.DEBUG,"result isFailed");
@@ -527,7 +535,7 @@ namespace collablio
 		}
 
 		//create nodes and optionally link to parent or children
-		public async Task<List<string>> UpsertNodesAsync(List<Node> nodeList)//, List<string> parentUids = null, List<string> childUids = null) 
+		public async Task<List<string>> UpsertNodesAsync(List<Node> nodeList, bool forDCG = false)//, List<string> parentUids = null, List<string> childUids = null) 
 		{
 			/*
 			{ "set":[
@@ -626,7 +634,8 @@ namespace collablio
 			foreach (var n in nodesBeingUpserted)
 				if(n.StartsWith("_:"))//set the parentUID to the ROOTNODE_UID !!except if it *is* the root node (the root node will never start with _:)
 				{
-					storeNodeOutgoingEdgeData(ref outgoingEdgeData, ROOTNODE_UID, n);
+					EdgeType etype = (forDCG) ? EdgeType.Link : EdgeType.Parent;
+					storeNodeOutgoingEdgeData(ref outgoingEdgeData, ROOTNODE_UID, n, etype);
 				}
 			
 			List<Node> nodesPlusEdges = new List<Node>(nodeList);
