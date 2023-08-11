@@ -13,7 +13,8 @@ namespace collablio
         Dictionary<string,string> defaults = new Dictionary<string,string> { 
             { "listenurl", "http://127.0.0.1:5000" },
             { "sessiontimeout" , "120" },
-			{ "loglevel" , "3" }
+			{ "loglevel" , "3" },
+			{ "dgraphurl", "http://127.0.0.1:9080" }
         };
 
 		private static ConfigManager _singleton = null;

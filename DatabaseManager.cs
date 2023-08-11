@@ -65,6 +65,8 @@ namespace collablio
 	
     class DatabaseManager
     {
+		private static ConfigManager confmgr = ConfigManager.Instance();
+
 		public static readonly int MAX_RECURSE_DEPTH = 10;
 		private string ROOT_NODE_LABEL = "Fe9yqjNp0wWEmhW260qA";
 		private string ROOTNODE_UID = "";
@@ -110,7 +112,7 @@ namespace collablio
 		private DatabaseManager()
 		{
 			AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-			_dbclient = new DgraphClient(GrpcChannel.ForAddress("http://127.0.0.1:9080", new GrpcChannelOptions { MaxReceiveMessageSize = 100*1024*1024 }));
+			_dbclient = new DgraphClient(GrpcChannel.ForAddress(confmgr.GetValue("dgraphurl"), new GrpcChannelOptions { MaxReceiveMessageSize = 100*1024*1024 }));
 	
 			jsonSerialiseOptions = new JsonSerializerOptions
 				{

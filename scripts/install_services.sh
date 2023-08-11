@@ -2,6 +2,7 @@
 PATH=$PATH:/sbin:/usr/sbin
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 COLLABLIO_USER=collablio
+COLLABLIO_HOME=/var/collablio
 
 re='^uid=0(root)'
 if [ ! "$(id | grep $re)" ] ; then
@@ -49,9 +50,13 @@ dotnet run --configuration Release
 done
 __EOF_CD
 
-adduser "$COLLABLIO_USER" --system
-chown -R "$COLLABLIO_USER" $SCRIPT_DIR/..
+#adduser "$COLLABLIO_USER" --system
+groupadd --system "$COLLABLIO_USER"
+useradd --system -d $COLLABLIO_HOME -s /bin/false -g "$COLLABLIO_USER" "$COLLABLIO_USER"
+chown -R "$COLLABLIO_USER":"$COLLABLIO_USER" $SCRIPT_DIR/..
 chmod a+x  $SCRIPT_DIR/daemon_collablio.sh
+mkdir -p $COLLABLIO_HOME
+chown -R "$COLLABLIO_USER":"$COLLABLIO_USER" $COLLABLIO_HOME
 
 # /etc/systemd/system/collablio_daemon.service
 cat << __EOF_DS > /etc/systemd/system/collablio_daemon.service
@@ -77,39 +82,25 @@ systemctl start collablio_daemon.service
 # If selected, install Dgraph standalone Docker service
 ###########################################################
 
+FINISHMSG="Installation of Collablio is complete,\n"\
+"Run:\n"\
+"setup.sh (to create Dgraph schema)\n"\
+"adduser.sh (to create a Collablio user in Dgraph)\n"
+
+
 if [ -z "$OPT_DGRAPH" ]
 then
 	echo "You have chosen not to install Dgraph, finished installation."
+	echo -e $FINISHMSG
 	exit 0
 fi
 
-if [ ! "$(which docker)" ]
-then
-    echo Docker is not installed, installing...
-	apt-get update &&  apt-get install -y docker.io
-else
-    echo "Docker found, skipping installation..."
-fi
+export DGRAPHVERSION=v21.03.2
+echo "downloading and installing dgraph $DGRAPHVERSION ..."
 
+curl https://get.dgraph.io -sSf > dgraph.sh
+sed -i 's/--lru_mb 2048//g' dgraph.sh
+sed -i 's/grep -Fx/grep -F/g' dgraph.sh
+bash dgraph.sh -y -s -v=$DGRAPHVERSION
 
-# /etc/systemd/system/dgraph_daemon.service
-cat << __EOF_DSD > /etc/systemd/system/dgraph_daemon.service
-[Unit]
-Description=Dgraph Daemon
-After=docker.service
-Requires=docker.service
-
-[Service]
-Type=simple
-ExecStart=/bin/bash -c 'rm /tmp/ddgcid5f5; /usr/bin/docker run --rm -p 127.0.0.1:8080:8080 -p 127.0.0.1:9080:9080 -p 127.0.0.1:8000:8000 -v /dgraph:/dgraph --cidfile /tmp/ddgcid5f5 dgraph/standalone:v21.12.0'
-ExecStop=/bin/bash -c '/usr/bin/docker stop $(cat /tmp/ddgcid5f5)'
-Restart=on-failure
-
-[Install]
-WantedBy=default.target
-__EOF_DSD
-
-
-systemctl daemon-reload
-systemctl enable dgraph_daemon.service
-systemctl start dgraph_daemon.service
+echo -e $FINISHMSG
