@@ -14,7 +14,10 @@ namespace collablio.Models
 		public static string Type = "Type";
 		public static string LastModTime = "LastModifiedTime";
 		public static string EventTimestamp  = "EventTimestamp";
-		public static string WhoEditing = "WhoIsEditing";
+		public static string StringE = "StrPropE";
+		public static string StringA = "StrPropA";
+		public static string StringS = "StrPropS";
+		public static string Num = "NumValue";
 		public static string Label = "Label";
 		public static string Detail = "Detail";
 		public static string CustomData = "CustomData";
@@ -34,7 +37,10 @@ namespace collablio.Models
 		public static string Type = "ty";
 		public static string LastModTime = "m";
 		public static string EventTimestamp  = "t";
-		public static string WhoEditing = "e";
+		public static string StringE = "e";
+		public static string StringA = "a";
+		public static string StringS = "s";
+		public static string Num = "n";
 		public static string Label = "l";
 		public static string Detail = "d";
 		public static string CustomData = "c";
@@ -55,7 +61,10 @@ namespace collablio.Models
 			{ PropsJson.UID, PropsInternal.UID },
 			{ PropsJson.LastModTime, PropsInternal.LastModTime },
 			{ PropsJson.EventTimestamp, PropsInternal.EventTimestamp },
-			{ PropsJson.WhoEditing, PropsInternal.WhoEditing },
+			{ PropsJson.StringE, PropsInternal.StringE },
+			{ PropsJson.StringA, PropsInternal.StringA },
+			{ PropsJson.StringS, PropsInternal.StringS },
+			{ PropsJson.Num, PropsInternal.Num },
 			{ PropsJson.Label, PropsInternal.Label },
 			{ PropsJson.Detail, PropsInternal.Detail },
 			{ PropsJson.CustomData, PropsInternal.CustomData },
@@ -72,7 +81,10 @@ namespace collablio.Models
 			{ PropsInternal.UID, PropsJson.UID },
 			{ PropsInternal.LastModTime, PropsJson.LastModTime },
 			{ PropsInternal.EventTimestamp, PropsJson.EventTimestamp },
-			{ PropsInternal.WhoEditing, PropsJson.WhoEditing },
+			{ PropsInternal.StringE, PropsJson.StringE },
+			{ PropsInternal.StringA, PropsJson.StringA },
+			{ PropsInternal.StringS, PropsJson.StringS },
+			{ PropsInternal.Num, PropsJson.Num },
 			{ PropsInternal.Label, PropsJson.Label },
 			{ PropsInternal.Detail, PropsJson.Detail },
 			{ PropsInternal.CustomData, PropsJson.CustomData },
@@ -135,7 +147,10 @@ namespace collablio.Models
 		public string Type { get; set; } // user defined type
 		//public DateTime LastModifiedTime { get; set; } // last modified timestamp
 		public DateTime? EventTimestamp { get; set; } = null; // custom timestamp
-		public string WhoIsEditing { get; set; } // if/who is currently editing
+		public string StrPropE { get; set; } // misc string property
+		public string StrPropA { get; set; } // misc string property
+		public string StrPropS { get; set; } // misc string property
+		public double? NumValue { get; set; } = null;// misc float numeric value property
 		public string Label { get; set; } // label/name/title
 		public string Detail { get; set; } // description/detail
 		public string CustomData { get; set; } // custom data string (for large text attachments use TextData)
@@ -149,7 +164,7 @@ namespace collablio.Models
 
 		public Node()
 		{
-			SetLastModTimeToNow();
+			//SetLastModTimeToNow();
 			DgraphType = new List<string> { "N" };
 		}
 

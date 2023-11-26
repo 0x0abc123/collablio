@@ -170,6 +170,7 @@ namespace collablio
 			else
 			{
 				RootNode rn = new RootNode {UID = "_:tmpkey", Type = "__ROOT__", ro = ROOT_NODE_LABEL };
+				rn.SetLastModTimeToNow();
 				var result = await DoTransaction(UpdateType.Add, rn, jsonSerialiseIgnoreNull);
 				if(result.IsFailed)
 				{
@@ -211,7 +212,7 @@ namespace collablio
 			QueryOptions qo = new QueryOptions();
 			qo.rootIds = uidsOfParentNodes;
 			qo.depth = (uint)recurseDepth;
-			qo.recurse = (upwardsRecurse) ? "outinv" : "out";
+			qo.recurse = (upwardsRecurse) ? "in" : "out";
 			qo.select = new List<string> {"l","d","c","m","in","out","ty"};
 			if(includeBody)
 				qo.select.Add("body");
@@ -250,7 +251,10 @@ namespace collablio
 			HashSet<string> allowedFields = new HashSet<string> {
 				PropsJson.LastModTime,
 				PropsJson.EventTimestamp,
-				PropsJson.WhoEditing,
+				PropsJson.StringE,
+				PropsJson.StringA,
+				PropsJson.StringS,
+				PropsJson.Num,
 				PropsJson.Label,
 				PropsJson.Detail,
 				PropsJson.CustomData,
@@ -267,9 +271,9 @@ namespace collablio
 			dirstr = dirstr ?? "out";
 			var directions = new Dictionary<string,string> { 
 				{ "out" , "out" },
-				{ "outinv" , "~out" },
+				{ "in" , "~out" },
 				{ "lnk" , "lnk" },
-				{ "lnkinv" , "~lnk" }
+				{ "inl" , "~lnk" }
 			};
 			if (directions.ContainsKey(dirstr))
 				return directions[dirstr];
@@ -335,6 +339,9 @@ namespace collablio
 			 {"c","c"},
 			 {"m","m"},
 			 {"e","e"},
+			 {"a","a"},
+			 {"s","s"},
+			 {"n","n"},
 			 {"t","t"},
 			 {"body","b x"},
 			 {"in","in: ~out {uid}"},
@@ -508,6 +515,7 @@ namespace collablio
 				Node srcNode = new Node { 
 					UID = srcNodeUID 
 				};
+				srcNode.SetLastModTimeToNow();
 
 				List<JustUidAndOutgoingEdges> ldst = new List<JustUidAndOutgoingEdges> { destNode };
 				switch(etype) {
